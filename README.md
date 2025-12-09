@@ -17,14 +17,6 @@ git clone <DataEngine_Repo_URL>
 git clone <ReferencePlugin_Repo_URL>
 ```
 
-**📂 Folder Structure should look like**
-```
-    root-folder/                    # your chosen root folder 
-    │
-    ├── AasTwin.DataEngine/        # This folder will automatically created when you clone the DataEngine repository
-    └── AasTwin.Plugin/            # This folder will automatically created when you clone the Plugin repository
-```
-
 ### 2. Start the Application
 In the AasTwin.DataEngine directory run the following command and open http://localhost:8080/aas-ui/ 
 ```bash
@@ -32,6 +24,6 @@ cd AasTwin.DataEngine
 docker-compose up -d
 ```
 
-If you want to further configure your DataEngine instance, go to our [example directory](../AasTwin.DataEngine/example/README.md).
+If you want to further configure your DataEngine, go to our [example directory](../AasTwin.DataEngine/example/README.md).
 
 

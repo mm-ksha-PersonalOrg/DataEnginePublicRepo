@@ -22,6 +22,7 @@ services:
     networks:
       - dataengine-network
 
+
   twinengine-dataengine:
     build:
       context: ./source
@@ -138,6 +139,7 @@ services:
     networks:
       - dataengine-network
 
+
   sm-template-regisry:
     image: eclipsebasyx/submodel-registry-log-mongodb:2.0.0-SNAPSHOT
     container_name: sm-template-regisry
@@ -190,7 +192,6 @@ services:
         condition: service_healthy
     networks:
       - dataengine-network
-
   mongo:
     image: mongo:6.0
     container_name: mongo
@@ -199,4 +200,3 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: mongoPassword
     networks:
       - dataengine-network
-
