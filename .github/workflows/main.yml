@@ -45,10 +45,10 @@ jobs:
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} \
-               --configuration ${{ env.BUILD_CONFIGURATION }} \
-               --no-build \
-               --logger "trx;LogFileName=test_results.trx"
+        run: dotnet test "source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj" \
+              --configuration ${{ env.BUILD_CONFIGURATION }} \
+              --no-build \
+              --logger "trx;LogFileName=test_results.trx"
 
       - name: Debug TRX location
         run: find . -name "*.trx" -print
