@@ -14,6 +14,7 @@ permissions:
   contents: read
   checks: write
   pull-requests: write
+  packages: write
 
 env:
   BUILD_CONFIGURATION: "Release"
@@ -22,7 +23,7 @@ env:
   SOLUTION_PATH: source/AAS.TwinEngine.DataEngine.sln
   TEST_PROJECT: source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj
   DOCKERFILE_PATH: source/AAS.TwinEngine.DataEngine/Dockerfile
-  DOCKER_CONTEXT: source/AAS.TwinEngine.DataEngine
+  BUILD_CONTEXT: source/AAS.TwinEngine.DataEngine
 
 jobs:
 
@@ -86,9 +87,8 @@ jobs:
       - name: Build & Push Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: ${{ env.DOCKER_CONTEXT }}
+          context: ${{ env.BUILD_CONTEXT }}
           file: ${{ env.DOCKERFILE_PATH }}
-          push: true
           tags: |
             ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:latest
             ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:${{ github.sha }}
