@@ -1,0 +1,84 @@
+name: DataEngine-CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+    paths:
+      - "AAS.TwinEngine.DataEngine/**"
+      - "AAS.TwinEngine.DataEngine.UnitTests/**"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  BUILD_CONFIGURATION: "Release"
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_REPOSITORY: ${{ github.repository_owner }}/dataengine
+  SOLUTION_PATH: AAS.TwinEngine.DataEngine/AAS.TwinEngine.DataEngine.sln
+  TEST_PROJECT: AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj
+  DOCKERFILE_PATH: AAS.TwinEngine.DataEngine/Dockerfile
+  DOCKER_CONTEXT: AAS.TwinEngine.DataEngine
+
+jobs:
+
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+      - name: Run Unit Tests
+        run: dotnet test ${{ env.TEST_PROJECT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger trx
+
+      - name: Publish Test Results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Unit Tests
+          path: "**/*.trx"
+          reporter: dotnet-trx
+
+
+  docker-build-push:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.DOCKER_CONTEXT }}
+          file: ${{ env.DOCKERFILE_PATH }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:latest
+            ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:${{ github.sha }}
