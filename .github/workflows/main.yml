@@ -18,10 +18,10 @@ env:
   BUILD_CONFIGURATION: "Release"
   IMAGE_REGISTRY: ghcr.io
   IMAGE_REPOSITORY: ${{ github.repository_owner }}/dataengine
-  SOLUTION_PATH: AAS.TwinEngine.DataEngine/AAS.TwinEngine.DataEngine.sln
-  TEST_PROJECT: AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj
-  DOCKERFILE_PATH: AAS.TwinEngine.DataEngine/Dockerfile
-  DOCKER_CONTEXT: AAS.TwinEngine.DataEngine
+  SOLUTION_PATH: AAS.TwinEngine.DataEngine/source/AAS.TwinEngine.DataEngine.sln
+  TEST_PROJECT: AAS.TwinEngine.DataEngine/source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj
+  DOCKERFILE_PATH: AAS.TwinEngine.DataEngine/source/AAS.TwinEngine.DataEngine/Dockerfile
+  DOCKER_CONTEXT: AAS.TwinEngine.DataEngine/source
 
 jobs:
 
