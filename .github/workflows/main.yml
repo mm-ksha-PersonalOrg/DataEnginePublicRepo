@@ -12,7 +12,8 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  checks: write
+  pull-requests: write
 
 env:
   BUILD_CONFIGURATION: "Release"
@@ -54,12 +55,19 @@ jobs:
         run: find . -name "*.trx" -print
 
       - name: Publish Test Results
-        if: always()
+        if: github.event.pull_request.head.repo.fork == false
         uses: dorny/test-reporter@v1
         with:
           name: Unit Tests
           path: "**/test_results.trx"
           reporter: dotnet-trx
+
+      - name: Upload TRX as artifact (Fork PR fallback)
+        if: github.event.pull_request.head.repo.fork == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "**/test_results.trx"
 
 
   docker-build-push:
