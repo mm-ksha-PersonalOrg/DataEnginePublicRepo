@@ -19,7 +19,7 @@ permissions:
 env:
   BUILD_CONFIGURATION: "Release"
   IMAGE_REGISTRY: ghcr.io
-  IMAGE_REPOSITORY: ${{ github.repository_owner }}/dataengine
+  IMAGE_REPOSITORY: mm-ksha-personalorg/dataengine
   SOLUTION_PATH: source/AAS.TwinEngine.DataEngine.sln
   TEST_PROJECT: source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj
   DOCKERFILE_PATH: source/AAS.TwinEngine.DataEngine/Dockerfile
@@ -66,3 +66,29 @@ jobs:
         with:
           name: test-results
           path: "**/test_results.trx"
+
+
+  docker-build-push:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: build-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.BUILD_CONTEXT }}
+          file: ${{ env.DOCKERFILE_PATH }}
+          tags: |
+            ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:latest
+            ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:${{ github.sha }}
