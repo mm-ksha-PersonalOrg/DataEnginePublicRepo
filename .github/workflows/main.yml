@@ -45,9 +45,6 @@ jobs:
       - name: Build
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
-      - name: Echo command
-        run: echo dotnet test "source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj" --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
-
       - name: Run Unit Tests
         run: dotnet test "source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj" --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
 
@@ -74,7 +71,6 @@ jobs:
     name: Docker Build & Push
     runs-on: ubuntu-latest
     needs: build-test
-    if: github.event_name == 'push'
 
     steps:
       - name: Checkout code
