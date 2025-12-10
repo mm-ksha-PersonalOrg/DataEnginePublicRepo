@@ -45,14 +45,20 @@ jobs:
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger trx
+        run: dotnet test ${{ env.TEST_PROJECT }} \
+               --configuration ${{ env.BUILD_CONFIGURATION }} \
+               --no-build \
+               --logger "trx;LogFileName=test_results.trx"
+
+      - name: Debug TRX location
+        run: find . -name "*.trx" -print
 
       - name: Publish Test Results
         if: always()
         uses: dorny/test-reporter@v1
         with:
           name: Unit Tests
-          path: "**/*.trx"
+          path: "**/test_results.trx"
           reporter: dotnet-trx
 
 
