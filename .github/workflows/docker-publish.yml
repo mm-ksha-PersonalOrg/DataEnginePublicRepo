@@ -18,6 +18,8 @@ env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   IMAGE_NAME: DataEngine
+  DOCKERFILE_PATH: source/AAS.TwinEngine.DataEngine/Dockerfile
+  BUILD_CONTEXT: source/AAS.TwinEngine.DataEngine
 
 
 jobs:
@@ -69,8 +71,8 @@ jobs:
         with:
           sbom: true
           provenance: mode=max
-          context: ./source
-          file: source/AAS.TwinEngine.DataEngine/Dockerfile
+          context: ${{ env.BUILD_CONTEXT }}
+          file: ${{ env.DOCKERFILE_PATH }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
