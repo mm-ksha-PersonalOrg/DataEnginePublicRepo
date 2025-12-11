@@ -17,7 +17,7 @@ permissions:
 env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ GITHUB_REPOSITORY_OWNER }}/DataEngine
+  IMAGE_NAME: ${{ github.repository.owner }}/DataEngine
   DOCKERFILE_PATH: source/AAS.TwinEngine.DataEngine/Dockerfile
   BUILD_CONTEXT: source
 
