@@ -1,4 +1,4 @@
-name: DataEngine-CI
+name: .NET Build and Test
 
 on:
   pull_request:
