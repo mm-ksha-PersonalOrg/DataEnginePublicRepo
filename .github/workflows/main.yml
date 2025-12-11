@@ -13,12 +13,8 @@ permissions:
 
 env:
   BUILD_CONFIGURATION: "Release"
-  IMAGE_REGISTRY: ghcr.io
-  IMAGE_REPOSITORY: mm-ksha-personalorg/dataengine
   SOLUTION_PATH: source/AAS.TwinEngine.DataEngine.sln
   TEST_PROJECT: source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj
-  DOCKERFILE_PATH: source/AAS.TwinEngine.DataEngine/Dockerfile
-  BUILD_CONTEXT: source/AAS.TwinEngine.DataEngine
 
 jobs:
 
