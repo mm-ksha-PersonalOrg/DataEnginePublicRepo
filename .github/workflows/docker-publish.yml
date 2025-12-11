@@ -19,7 +19,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: DataEngine
   DOCKERFILE_PATH: source/AAS.TwinEngine.DataEngine/Dockerfile
-  BUILD_CONTEXT: source/AAS.TwinEngine.DataEngine
+  BUILD_CONTEXT: source
 
 
 jobs:
