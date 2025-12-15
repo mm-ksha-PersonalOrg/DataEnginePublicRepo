@@ -40,7 +40,7 @@ jobs:
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
+        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --no-build --logger "trx;LogFileName=test_results.trx" --collect:"XPlat Code Coverage" --settings source/coverlet.runsettings
 
         # https://github.com/dorny/test-reporter
       - name: Publish Test Results
@@ -50,6 +50,27 @@ jobs:
           name: Unit Tests
           path: "**/test_results.trx"
           reporter: dotnet-trx
+
+      - name: Code Coverage Report
+        if: github.event.pull_request.head.repo.fork == false
+        uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95 # v1.3.0
+        with:
+          filename: "**/coverage.cobertura.xml"
+          badge: true
+          fail_below_min: false
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: false
+          indicators: true
+          output: both
+          thresholds: "60 80"
+
+      - name: Add Coverage PR Comment
+        if: github.event.pull_request.head.repo.fork == false
+        uses: marocchino/sticky-pull-request-comment@331f8f5b4215f0445d3c07b4967662a32a2d3e31 # v2.9.0
+        with:
+          recreate: true
+          path: code-coverage-results.md
 
       - name: Upload TRX as artifact (Fork PR fallback)
         if: github.event.pull_request.head.repo.fork == true
