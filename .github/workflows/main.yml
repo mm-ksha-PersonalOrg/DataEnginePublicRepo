@@ -1,0 +1,67 @@
+name: DataEngine-CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+    paths:
+      - "AAS.TwinEngine.DataEngine/**"
+      - "AAS.TwinEngine.DataEngine.UnitTests/**"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+env:
+  BUILD_CONFIGURATION: "Release"
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_REPOSITORY: mm-ksha-personalorg/dataengine
+  SOLUTION_PATH: source/AAS.TwinEngine.DataEngine.sln
+  TEST_PROJECT: source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj
+  DOCKERFILE_PATH: source/AAS.TwinEngine.DataEngine/Dockerfile
+  BUILD_CONTEXT: source/AAS.TwinEngine.DataEngine
+
+jobs:
+
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+      - name: Run Unit Tests
+        run: dotnet test "source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj" --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
+
+      - name: Debug TRX location
+        run: find . -name "*.trx" -print
+
+      - name: Publish Test Results
+        if: github.event.pull_request.head.repo.fork == false
+        uses: dorny/test-reporter@v1
+        with:
+          name: Unit Tests
+          path: "**/test_results.trx"
+          reporter: dotnet-trx
+
+      - name: Upload TRX as artifact (Fork PR fallback)
+        if: github.event.pull_request.head.repo.fork == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "**/test_results.trx"
