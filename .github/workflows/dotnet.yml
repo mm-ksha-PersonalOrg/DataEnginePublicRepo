@@ -3,12 +3,12 @@ name: .NET
 on:
   pull_request:
     branches: 
-    - main
-    - develop
+    - 'main'
+    - 'develop'
   push:
     branches: 
-    - main
-    - develop
+    - 'main'
+    - 'develop'
 
 permissions:
   contents: read
