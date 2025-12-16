@@ -6,7 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: "nuget"
-    target-branch: dev
+    target-branch: "develop"
     directory: "/source"
     schedule:
       interval: "weekly"
@@ -14,13 +14,13 @@ updates:
       default-days: 3
 
   - package-ecosystem: "docker"
-    target-branch: dev
+    target-branch: "develop"
     directory: "/source/AAS.TwinEngine.DataEngine"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "docker-compose"
-    target-branch: dev
+    target-branch: "develop"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -28,7 +28,7 @@ updates:
       default-days: 3
 
   - package-ecosystem: "github-actions"
-    target-branch: dev
+    target-branch: "develop"
     directory: "/"
     schedule:
       interval: "weekly"
