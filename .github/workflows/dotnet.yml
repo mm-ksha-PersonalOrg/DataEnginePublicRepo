@@ -103,7 +103,7 @@ jobs:
           echo "| ⏭️ Skipped | ${{ steps.test-results.outputs.skipped }} |" >> results.md
           echo "| ⏱️ Execution Time | ${{ steps.test-results.outputs.time }} ms |" >> results.md
           echo "" >> results.md
-          echo "🔗 [View Detailed Test Results](${{ steps.test-results.outputs.url }})" >> results.md
+          echo "[View Detailed Test Results](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> results.md
           echo "" >> results.md
           echo "---" >> results.md
           echo "" >> results.md
