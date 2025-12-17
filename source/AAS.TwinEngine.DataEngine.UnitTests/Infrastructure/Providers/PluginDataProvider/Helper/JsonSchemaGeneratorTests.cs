@@ -48,36 +48,6 @@ public class JsonSchemaGeneratorTests
     }
 
     [Fact]
-    public void ConvertToJsonSchema_LeafWithStringArrayDataType_EmitsStringAndArrayTypes()
-    {
-        const string SemanticId = "http://example.com/idta/digital-nameplate/contact-list";
-        const string StringArrayLeafId = "http://example.com/idta/digital-nameplate/contact-list/TestUnknown";
-        var branch = new SemanticBranchNode(
-            semanticId: SemanticId,
-            cardinality: Cardinality.One
-        );
-        branch.AddChild(new SemanticLeafNode(
-            StringArrayLeafId, null!, DataType.StringArray, Cardinality.One));
-
-        var result = JsonSchemaGenerator.ConvertToJsonSchema(branch);
-
-        var propKeyword = result.Keywords!.OfType<PropertiesKeyword>().SingleOrDefault();
-        Assert.NotNull(propKeyword);
-        Assert.True(propKeyword!.Properties.ContainsKey(SemanticId));
-        var branchSchema = propKeyword.Properties[SemanticId];
-        var branchProps = branchSchema.Keywords!.OfType<PropertiesKeyword>().SingleOrDefault();
-        Assert.NotNull(branchProps);
-        Assert.True(branchProps!.Properties.ContainsKey(StringArrayLeafId));
-        var stringArrayLeafIdSchema = branchProps.Properties[StringArrayLeafId];
-        var schemaTypeForStringArray = stringArrayLeafIdSchema
-                                       .Keywords!
-                                       .OfType<TypeKeyword>()
-                                       .FirstOrDefault()!.Type;
-        Assert.Contains("String", schemaTypeForStringArray.ToString(), StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Array", schemaTypeForStringArray.ToString(), StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
     public void ConvertToJsonSchema_BranchNodeWithOneCardinality_ReturnsObjectSchema()
     {
         const string SemanticId = "http://example.com/idta/digital-nameplate/contact-list";

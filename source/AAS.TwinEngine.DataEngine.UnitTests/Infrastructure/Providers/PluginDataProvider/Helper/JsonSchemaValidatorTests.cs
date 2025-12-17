@@ -132,57 +132,6 @@ public class JsonSchemaValidatorTests
     }
 
     [Fact]
-    public void ValidateResponseContent_PropertyTypeStringOrArray_WithString_DoesNotThrow()
-    {
-        var schema = new JsonSchemaBuilder()
-                     .Type(SchemaValueType.Object)
-                     .Properties(new Dictionary<string, JsonSchema>
-                     {
-                         ["value"] = new JsonSchemaBuilder().Type(SchemaValueType.String, SchemaValueType.Array).Build()
-                     })
-                     .Required("value")
-                     .Build();
-
-        const string Json = "{\"value\": \"hello\"}";
-
-        _sut.ValidateResponseContent(Json, schema);
-    }
-
-    [Fact]
-    public void ValidateResponseContent_PropertyTypeStringOrArray_WithArray_DoesNotThrow()
-    {
-        var schema = new JsonSchemaBuilder()
-                     .Type(SchemaValueType.Object)
-                     .Properties(new Dictionary<string, JsonSchema>
-                     {
-                         ["value"] = new JsonSchemaBuilder().Type(SchemaValueType.String, SchemaValueType.Array).Build()
-                     })
-                     .Required("value")
-                     .Build();
-
-        const string Json = "{\"value\": [\"one\", \"two\"]}";
-
-        _sut.ValidateResponseContent(Json, schema);
-    }
-
-    [Fact]
-    public void ValidateResponseContent_PropertyTypeStringOrArray_WithNumber_ThrowsBadRequest()
-    {
-        var schema = new JsonSchemaBuilder()
-                     .Type(SchemaValueType.Object)
-                     .Properties(new Dictionary<string, JsonSchema>
-                     {
-                         ["value"] = new JsonSchemaBuilder().Type(SchemaValueType.String, SchemaValueType.Array).Build()
-                     })
-                     .Required("value")
-                     .Build();
-
-        const string Json = "{\"value\": 123}";
-
-        Assert.Throws<InternalDataProcessingException>(() => _sut.ValidateResponseContent(Json, schema));
-    }
-
-    [Fact]
     public void ValidateResponseContent_SchemaMismatch_ThrowsBadRequest()
     {
         var schema = new JsonSchemaBuilder()

@@ -93,14 +93,14 @@ public static class JsonSchemaGenerator
 
     private static JsonSchema BuildLeaf(SemanticLeafNode leaf)
     {
-        SchemaValueType[] type = leaf.DataType switch
+        var type = leaf.DataType switch
         {
-            DataType.String => [SchemaValueType.String],
-            DataType.Boolean => [SchemaValueType.Boolean],
-            DataType.Integer => [SchemaValueType.Integer],
-            DataType.Number => [SchemaValueType.Number],
-            DataType.StringArray => [SchemaValueType.Array , SchemaValueType.String],
-            _ => [SchemaValueType.String] 
+            DataType.String => SchemaValueType.String,
+            DataType.Boolean => SchemaValueType.Boolean,
+            DataType.Integer => SchemaValueType.Integer,
+            DataType.Number => SchemaValueType.Number,
+            DataType.Unknown => SchemaValueType.String,
+            _ => SchemaValueType.String
         };
 
         return new JsonSchemaBuilder().Type(type).Build();

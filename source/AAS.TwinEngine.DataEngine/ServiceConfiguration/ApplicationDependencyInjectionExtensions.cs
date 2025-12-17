@@ -12,8 +12,6 @@ using AAS.TwinEngine.DataEngine.ApplicationLogic.Services.SubmodelRepository;
 using AAS.TwinEngine.DataEngine.Infrastructure.Providers.AasRegistryProvider.Services;
 using AAS.TwinEngine.DataEngine.Infrastructure.Providers.PluginDataProvider.Services;
 
-using FluentValidation;
-
 using Microsoft.Extensions.Options;
 
 namespace AAS.TwinEngine.DataEngine.ServiceConfiguration;
@@ -22,7 +20,6 @@ public static class ApplicationDependencyInjectionExtensions
 {
     public static void ConfigureApplication(this IServiceCollection services, IConfiguration configuration)
     {
-        _ = services.AddValidatorsFromAssembly(typeof(ApplicationDependencyInjectionExtensions).Assembly);
         _ = services.AddExceptionHandler<GlobalExceptionHandler>();
         _ = services.AddProblemDetails();
         _ = services.Configure<ApiConfiguration>(configuration.GetSection("ApiConfiguration"));

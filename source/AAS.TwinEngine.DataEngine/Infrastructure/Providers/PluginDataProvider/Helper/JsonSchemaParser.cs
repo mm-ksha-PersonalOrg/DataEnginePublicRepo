@@ -92,42 +92,12 @@ public static class JsonSchemaParser
 
     private static void ProcessJsonArray(JsonElement arrayElement, SemanticBranchNode parentBranch, string? baseSemanticId = null)
     {
-        var semanticId = baseSemanticId ?? parentBranch.SemanticId;
-
-        var items = arrayElement.EnumerateArray();
-
-        if (items.All(IsPrimitiveValue))
+        foreach (var item in arrayElement.EnumerateArray())
         {
-            ProcessPrimitiveArray(items, parentBranch, semanticId);
-            return;
-        }
-
-        foreach (var item in items)
-        {
+            var semanticId = baseSemanticId ?? parentBranch.SemanticId;
             var arrayItemBranch = new SemanticBranchNode(semanticId, Cardinality.Unknown);
             ProcessJsonValue(item, arrayItemBranch);
             parentBranch.AddChild(arrayItemBranch);
-        }
-    }
-
-    private static void ProcessPrimitiveArray(IEnumerable<JsonElement> items, SemanticBranchNode parentBranch, string semanticId)
-    {
-        if (parentBranch.SemanticId != semanticId)
-        {
-            var branchNode = new SemanticBranchNode(semanticId, Cardinality.Unknown);
-            foreach (var item in items)
-            {
-                branchNode.AddChild(new SemanticLeafNode(semanticId, item.ToString(), DataType.Unknown, Cardinality.Unknown));
-            }
-
-            parentBranch.AddChild(branchNode);
-        }
-        else
-        {
-            foreach (var item in items)
-            {
-                parentBranch.AddChild(new SemanticLeafNode(semanticId, item.ToString(), DataType.Unknown, Cardinality.Unknown));
-            }
         }
     }
 

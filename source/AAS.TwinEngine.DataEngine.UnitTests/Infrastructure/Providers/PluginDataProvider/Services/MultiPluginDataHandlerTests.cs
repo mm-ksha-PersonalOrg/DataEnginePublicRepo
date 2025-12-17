@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 using NSubstitute;
 
-namespace AAS.TwinEngine.DataEngine.UnitTests.ApplicationLogic.Services.SubmodelRepository;
+namespace AAS.TwinEngine.DataEngine.UnitTests.Infrastructure.Providers.PluginDataProvider.Services;
 
 public class MultiPluginDataHandlerTests
 {
@@ -115,15 +115,14 @@ public class MultiPluginDataHandlerTests
             }
         };
 
-        var exception = Assert.Throws<ResourceNotFoundException>(() =>
-            _sut.SplitByPluginManifests(globalTree, manifests));
+        Assert.Throws<MultiPluginConflictException>(() => _sut.SplitByPluginManifests(globalTree, manifests));
 
         _logger.Received(1).Log(
                 LogLevel.Error,
                 Arg.Any<EventId>(),
-                Arg.Is<object>(v => v.ToString().Contains("abc")),
+                Arg.Is<object>(v => v.ToString()!.Contains("abc")),
                 Arg.Any<Exception>(),
-                Arg.Any<Func<object, Exception, string>>());
+                Arg.Any<Func<object, Exception, string>>()!);
     }
 
     [Fact]

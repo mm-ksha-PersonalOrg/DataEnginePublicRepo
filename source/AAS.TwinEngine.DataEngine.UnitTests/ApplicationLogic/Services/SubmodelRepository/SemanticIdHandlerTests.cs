@@ -10,6 +10,8 @@ using AasCore.Aas3_0;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using MongoDB.Bson;
+
 using NSubstitute;
 
 using static Xunit.Assert;
@@ -62,7 +64,7 @@ public class SemanticIdHandlerTests
         var node = (SemanticBranchNode)_sut.Extract(TestData.CreateSubmodel());
 
         Equal("http://example.com/idta/digital-nameplate/semantic-id", node.SemanticId);
-        Equal(7, node.Children.Count);
+        Equal(8, node.Children.Count);
         var manufacturerNameNode = node.Children[0] as SemanticBranchNode;
         NotNull(manufacturerNameNode);
         Equal("http://example.com/idta/digital-nameplate/manufacturer-name", manufacturerNameNode.SemanticId);
@@ -118,6 +120,25 @@ public class SemanticIdHandlerTests
         Equal("http://example.com/idta/digital-nameplate/range_min", rangeMinNode!.SemanticId);
         var rangeMaxNode = range.Children[1] as SemanticLeafNode;
         Equal("http://example.com/idta/digital-nameplate/range_max", rangeMaxNode!.SemanticId);
+
+        var entityNode = node.Children[7] as SemanticBranchNode;
+        NotNull(entityNode);
+        Equal("http://example.com/idta/digital-nameplate/entitynode", entityNode.SemanticId);
+        var entityNodeLeaf = entityNode.Children[0] as SemanticLeafNode;
+        NotNull(entityNodeLeaf);
+        Equal("http://example.com/idta/digital-nameplate/entitynode_globalAssetId", entityNodeLeaf.SemanticId);
+
+        var entityNodeLeaf2 = entityNode.Children[1] as SemanticLeafNode;
+        NotNull(entityNodeLeaf2);
+        Equal("https://example.com/cd/manufacturer", entityNodeLeaf2.SemanticId);
+
+        var entityNodeLeaf3 = entityNode.Children[2] as SemanticLeafNode;
+        NotNull(entityNodeLeaf3);
+        Equal("https://example.com/cd/serialnumber", entityNodeLeaf3.SemanticId);
+
+        var entityNodeLeaf4 = entityNode.Children[3] as SemanticLeafNode;
+        NotNull(entityNodeLeaf4);
+        Equal("http://example.com/idta/digital-nameplate/contact-name", entityNodeLeaf4.SemanticId);
     }
 
     [Fact]
@@ -129,9 +150,46 @@ public class SemanticIdHandlerTests
 
         Equal("http://example.com/idta/digital-nameplate/semantic-id", node?.SemanticId);
         Single(node!.Children);
-        var referenceElementNode = node.Children[0] as SemanticLeafNode;
+        var referenceElementNode = node.Children[0] as SemanticBranchNode;
         NotEqual("http://example.com/idta/digital-nameplate/reference-element/external-reference", referenceElementNode?.SemanticId);
         Equal("http://example.com/idta/digital-nameplate/reference-element/model-reference", referenceElementNode?.SemanticId);
+        Equal(5, referenceElementNode!.Children.Count);
+        var key1 = referenceElementNode.Children[0] as SemanticLeafNode;
+        Equal("http://example.com/idta/digital-nameplate/reference-element/model-reference_Submodel", key1?.SemanticId);
+        var key2 = referenceElementNode.Children[1] as SemanticLeafNode;
+        Equal("http://example.com/idta/digital-nameplate/reference-element/model-reference_SubmodelElementList", key2?.SemanticId);
+        var key3 = referenceElementNode.Children[2] as SemanticLeafNode;
+        Equal("http://example.com/idta/digital-nameplate/reference-element/model-reference_SubmodelElementCollection_0", key3?.SemanticId);
+        var key4 = referenceElementNode.Children[3] as SemanticLeafNode;
+        Equal("http://example.com/idta/digital-nameplate/reference-element/model-reference_SubmodelElementCollection_1", key4?.SemanticId);
+        var key5 = referenceElementNode.Children[4] as SemanticLeafNode;
+        Equal("http://example.com/idta/digital-nameplate/reference-element/model-reference_Property", key5?.SemanticId);
+    }
+
+    [Fact]
+    public void Extract_SubmodelWithRelationshipElement_ReturnsExpectedStructure()
+    {
+        var submodel = TestData.CreateSubmodelRelationshipElement();
+
+        var node = _sut.Extract(submodel) as SemanticBranchNode;
+
+        Equal("http://example.com/idta/digital-nameplate/semantic-id", node?.SemanticId);
+        Equal(2, node!.Children.Count);
+        var relationshipElementWithBoth = node.Children[0] as SemanticBranchNode;
+        Equal("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference", relationshipElementWithBoth!.SemanticId);
+        Equal(2, relationshipElementWithBoth.Children.Count);
+        var firstBranchNode = relationshipElementWithBoth.Children[0] as SemanticBranchNode;
+        Equal("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_first", firstBranchNode!.SemanticId);
+        Equal(4, firstBranchNode.Children.Count);
+        var secondBranchNode = relationshipElementWithBoth.Children[1] as SemanticBranchNode;
+        Equal("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_second", secondBranchNode!.SemanticId);
+        Equal(3, secondBranchNode.Children.Count);
+        var relationshipElementWithOne = node.Children[1] as SemanticBranchNode;
+        Equal("http://example.com/idta/digital-nameplate/relationship-element/second-model-reference", relationshipElementWithOne!.SemanticId);
+        Single(relationshipElementWithOne!.Children);
+        var branchNode = relationshipElementWithOne.Children[0] as SemanticBranchNode;
+        Equal("http://example.com/idta/digital-nameplate/relationship-element/second-model-reference_second", branchNode!.SemanticId);
+        Equal(4, branchNode.Children.Count);
     }
 
     [Fact]
@@ -223,7 +281,7 @@ public class SemanticIdHandlerTests
 
         Equal(GetSemanticId(expected), GetSemanticId(result));
     }
-    
+
     [Fact]
     public void Extract_ReturnsSubmodelElement_WhenPathIsValidAndNested()
     {
@@ -461,7 +519,16 @@ public class SemanticIdHandlerTests
         var range = submodelWithNewValues.SubmodelElements?[6] as AasCore.Aas3_0.Range;
         NotNull(range);
         Equal("10.02", range.Min);
-        Equal("99.98" , range.Max);
+        Equal("99.98", range.Max);
+
+        var entityNode = submodelWithNewValues.SubmodelElements?[7] as Entity;
+        NotNull(entityNode);
+        _ = Single(entityNode.Statements!);
+        var entityleafNode = entityNode.Statements![0] as Property;
+        NotNull(entityleafNode);
+        Equal("urn:uuid:123e4567-e89b-12d3-a456-426614174000", entityNode.GlobalAssetId);
+        Equal("manufacturer_Value", entityNode.SpecificAssetIds[0].Value);
+        Equal("serialnumber_Value", entityNode.SpecificAssetIds[1].Value);
     }
 
     [Fact]
@@ -508,7 +575,7 @@ public class SemanticIdHandlerTests
     }
 
     [Fact]
-    public void FillOutTemplate_ShouldNotChange_ExternalReferenceElement()
+    public void FillOutTemplate_ShouldNotChange_ExternalReferenceElement_InReferenceElement()
     {
         var value = TestData.CreateReferenceElementWithExternalReference();
         var submodel = CreateSubmodelWithSubmodelElement(value);
@@ -522,72 +589,17 @@ public class SemanticIdHandlerTests
         IsType<ReferenceElement>(result!.SubmodelElements![0]);
         var referenceElement = result.SubmodelElements[0] as ReferenceElement;
         Equal(TestData.CreateFilledReferenceElementWithExternalReference().ToString(), referenceElement!.ToString());
+        NotEqual("test", referenceElement!.ToString());
     }
 
     [Fact]
-    public void FillOutTemplate_ShouldAddSubmodelIdentifier_WhenModelReference_AndValueIsStringWithoutSeparator()
+    public void FillOutTemplate_WhereModelReference_AndEachLeafNodeValueIsPresent_InReferenceElement()
     {
         var value = TestData.CreateReferenceElementWithModelReference();
         var submodel = CreateSubmodelWithSubmodelElement(value);
         var semanticTree = new SemanticBranchNode("http://example.com/idta/digital-nameplate/semantic-id", Cardinality.One);
-        semanticTree.AddChild(TestData.CreateReferenceElementTreeNodeWhereValueIsStringWithoutSeparator());
-        var result = _sut.FillOutTemplate(submodel, semanticTree);
+        semanticTree.AddChild(TestData.CreateReferenceElementTreeNodeWhereEachValueOfLeafIsPresent());
 
-        NotNull(result);
-        Single(result!.SubmodelElements!);
-        IsType<ReferenceElement>(result!.SubmodelElements![0]);
-        var referenceElement = result.SubmodelElements[0] as ReferenceElement;
-        Equal(TestData.CreateReferenceElementWithModelReference()!.Value!.Keys!.Count!, referenceElement!.Value!.Keys!.Count);
-        Equal(TestData.CreateFilledReferenceElementWithModelReference()!.Value!.Keys.FirstOrDefault(k => k.Type == KeyTypes.Submodel)!.Value,
-              referenceElement.Value.Keys.FirstOrDefault(k => k.Type == KeyTypes.Submodel)!.Value);
-    }
-
-    [Fact]
-    public void FillOutTemplate_ShouldAddSubmodelIdentifier_WhenModelReference_AndValueNull_ReturnsOriginalTemplate()
-    {
-        var value = TestData.CreateReferenceElementWithModelReference();
-        var submodel = CreateSubmodelWithSubmodelElement(value);
-        var semanticTree = new SemanticBranchNode("http://example.com/idta/digital-nameplate/semantic-id", Cardinality.One);
-        semanticTree.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "", DataType.String, Cardinality.Unknown));
-        var result = _sut.FillOutTemplate(submodel, semanticTree);
-
-        NotNull(result);
-        Single(result!.SubmodelElements!);
-        IsType<ReferenceElement>(result!.SubmodelElements![0]);
-        var referenceElement = result.SubmodelElements[0] as ReferenceElement;
-        Equal(value.Value!.Keys!.Count!, referenceElement!.Value!.Keys!.Count);
-        var expectedKeys = value.Value!.Keys!;
-        for (var i = 0; i < expectedKeys.Count; i++)
-        {
-            Equal(expectedKeys[i].Value, referenceElement.Value.Keys[i]!.Value);
-        }
-    }
-
-    [Fact]
-    public void FillOutTemplate_ShouldAddSubmodelIdentifier_WhenModelReferenceHasEmptyKey_AndValueIsStringWithoutSeparator()
-    {
-        var value = TestData.CreateReferenceElementWithModelReferenceElementWithEmptyKey();
-        var submodel = CreateSubmodelWithSubmodelElement(value);
-        var semanticTree = new SemanticBranchNode("http://example.com/idta/digital-nameplate/semantic-id", Cardinality.One);
-        semanticTree.AddChild(TestData.CreateReferenceElementTreeNodeWhereValueIsStringWithoutSeparator());
-        var result = _sut.FillOutTemplate(submodel, semanticTree);
-
-        NotNull(result);
-        Single(result!.SubmodelElements!);
-        IsType<ReferenceElement>(result!.SubmodelElements![0]);
-        var referenceElement = result.SubmodelElements[0] as ReferenceElement;
-        Single(referenceElement!.Value!.Keys);
-        Equal(TestData.CreateFilledReferenceElementWithModelReference()!.Value!.Keys.FirstOrDefault(k => k.Type == KeyTypes.Submodel)!.Value,
-              referenceElement.Value.Keys.FirstOrDefault(k => k.Type == KeyTypes.Submodel)!.Value);
-    }
-
-    [Fact]
-    public void FillOutTemplate_ShouldAddValues_WhenModelReference_AndValueIsStringWithSeparator_HasLessValue()
-    {
-        var value = TestData.CreateReferenceElementWithModelReference();
-        var submodel = CreateSubmodelWithSubmodelElement(value);
-        var semanticTree = new SemanticBranchNode("http://example.com/idta/digital-nameplate/semantic-id", Cardinality.One);
-        semanticTree.AddChild(TestData.CreateReferenceElementTreeNodeWhereValueIsStringWithSeparator());
         var result = _sut.FillOutTemplate(submodel, semanticTree);
 
         NotNull(result);
@@ -603,48 +615,23 @@ public class SemanticIdHandlerTests
             NotNull(actualKey);
             Equal(expectedKey.Value, actualKey!.Value);
         }
-
-        Equal(value.Value!.Keys[(expectedKeys.Count - 1)],referenceElement.Value.Keys[(expectedKeys.Count - 1)]);
     }
 
     [Fact]
-    public void FillOutTemplate_ShouldAddValues_WhenModelReference_AndValueIsStringWithSeparator_HasAllValue()
+    public void FillOutTemplate_WhereModelReference_AndEachLeafNodeValueIsNotPresent_InReferenceElement_TakesValueFormTemplate()
     {
         var value = TestData.CreateReferenceElementWithModelReference();
         var submodel = CreateSubmodelWithSubmodelElement(value);
         var semanticTree = new SemanticBranchNode("http://example.com/idta/digital-nameplate/semantic-id", Cardinality.One);
-        semanticTree.AddChild(TestData.CreateReferenceElementTreeNodeWhereValueIsStringWithSeparatorHasAllValue());
+        semanticTree.AddChild(TestData.CreateReferenceElementTreeNodeWhereEachValueOfLeafIsNotPresent());
+
         var result = _sut.FillOutTemplate(submodel, semanticTree);
 
         NotNull(result);
         Single(result!.SubmodelElements!);
         IsType<ReferenceElement>(result!.SubmodelElements![0]);
         var referenceElement = result.SubmodelElements[0] as ReferenceElement;
-        Equal(TestData.CreateFilledReferenceElementWithModelReference()!.Value!.Keys!.Count!, referenceElement!.Value!.Keys!.Count);
-        var expectedKeys = TestData.CreateFilledReferenceElementWithModelReference()!.Value!.Keys!;
-        for (var i = 0; i < expectedKeys.Count; i++)
-        {
-            var expectedKey = expectedKeys[i];
-            var actualKey = referenceElement.Value.Keys[i];
-            NotNull(actualKey);
-            Equal(expectedKey.Value, actualKey!.Value);
-        }
-    }
-
-    [Fact]
-    public void FillOutTemplate_ShouldAddValues_WhenModelReference_AndValueIsBranchNode_HasLessValue()
-    {
-        var value = TestData.CreateReferenceElementWithModelReference();
-        var submodel = CreateSubmodelWithSubmodelElement(value);
-        var semanticTree = new SemanticBranchNode("http://example.com/idta/digital-nameplate/semantic-id", Cardinality.One);
-        semanticTree.AddChild(TestData.CreateReferenceElementTreeNodeWhereValueIsInMultipleLeafNode());
-        var result = _sut.FillOutTemplate(submodel, semanticTree);
-
-        NotNull(result);
-        Single(result!.SubmodelElements!);
-        IsType<ReferenceElement>(result!.SubmodelElements![0]);
-        var referenceElement = result.SubmodelElements[0] as ReferenceElement;
-        Equal(TestData.CreateFilledReferenceElementWithModelReference()!.Value!.Keys!.Count!, referenceElement!.Value!.Keys!.Count);
+        Equal(TestData.CreateFilledReferenceElementWithModelReferenceWithTemplateValueForProperty()!.Value!.Keys!.Count!, referenceElement!.Value!.Keys!.Count);
         var expectedKeys = TestData.CreateFilledReferenceElementWithModelReference()!.Value!.Keys!;
         for (var i = 0; i < expectedKeys.Count - 1; i++)
         {
@@ -653,32 +640,57 @@ public class SemanticIdHandlerTests
             NotNull(actualKey);
             Equal(expectedKey.Value, actualKey!.Value);
         }
-
-        Equal(value.Value!.Keys[(expectedKeys.Count - 1)], referenceElement.Value.Keys[(expectedKeys.Count - 1)]);
     }
 
     [Fact]
-    public void FillOutTemplate_ShouldAddValues_WhenModelReference_AndValueIsBranchNode_HasAllValue()
+    public void FillOutTemplate_ShouldNotChange_RelationShipElementWhenExternalReferenceForBoth()
     {
-        var value = TestData.CreateReferenceElementWithModelReference();
+        var value = TestData.CreateRelationshipElementWithBothExternalReference();
         var submodel = CreateSubmodelWithSubmodelElement(value);
         var semanticTree = new SemanticBranchNode("http://example.com/idta/digital-nameplate/semantic-id", Cardinality.One);
-        semanticTree.AddChild(TestData.CreateReferenceElementTreeNodeWhereValueIsInMultipleLeafNodeHasAllValue());
+        semanticTree.AddChild(new SemanticBranchNode("http://example.com/idta/digital-nameplate/relationship-element/both-external-reference", Cardinality.Unknown));
+
         var result = _sut.FillOutTemplate(submodel, semanticTree);
 
         NotNull(result);
         Single(result!.SubmodelElements!);
-        IsType<ReferenceElement>(result!.SubmodelElements![0]);
-        var referenceElement = result.SubmodelElements[0] as ReferenceElement;
-        Equal(TestData.CreateFilledReferenceElementWithModelReference()!.Value!.Keys!.Count!, referenceElement!.Value!.Keys!.Count);
-        var expectedKeys = TestData.CreateFilledReferenceElementWithModelReference()!.Value!.Keys!;
-        for (var i = 0; i < expectedKeys.Count; i++)
-        {
-            var expectedKey = expectedKeys[i];
-            var actualKey = referenceElement.Value.Keys[i];
-            NotNull(actualKey);
-            Equal(expectedKey.Value, actualKey!.Value);
-        }
+        IsType<RelationshipElement>(result!.SubmodelElements![0]);
+        var relationShipElement = result.SubmodelElements[0] as RelationshipElement;
+        Equal(TestData.CreateRelationshipElementWithBothExternalReference().ToJson(), relationShipElement!.ToJson());
+    }
+
+    [Fact]
+    public void FillOutTemplate_RelationShipElementHaveOneModelReference_ProvidesAllLeafNodeValue()
+    {
+        var value = TestData.CreateRelationshipElementWithOneExternalReferenceAndOneModelReference();
+        var submodel = CreateSubmodelWithSubmodelElement(value);
+        var semanticTree = new SemanticBranchNode("http://example.com/idta/digital-nameplate/semantic-id", Cardinality.One);
+        semanticTree.AddChild(TestData.CreateRelationShipElementHaveOneModelReferenceWhereEachValueOfLeafIsPresent());
+
+        var result = _sut.FillOutTemplate(submodel, semanticTree);
+
+        NotNull(result);
+        Single(result!.SubmodelElements!);
+        IsType<RelationshipElement>(result!.SubmodelElements![0]);
+        var relationShipElement = result.SubmodelElements[0] as RelationshipElement;
+        Equal(TestData.CreateFilledRelationshipElementWithOneExternalReferenceAndOneModelReference().ToJson(), relationShipElement!.ToJson());
+    }
+
+    [Fact]
+    public void FillOutTemplate_RelationShipElementBothModelReference_HandlesMissingLeafNodeValuesAsWell()
+    {
+        var value = TestData.CreateRelationshipElementWithBothModelReference();
+        var submodel = CreateSubmodelWithSubmodelElement(value);
+        var semanticTree = new SemanticBranchNode("http://example.com/idta/digital-nameplate/semantic-id", Cardinality.One);
+        semanticTree.AddChild(TestData.CreateRelationshipElementWithBothModelReferenceWhereEachValueOfLeafIsNotPresent());
+
+        var result = _sut.FillOutTemplate(submodel, semanticTree);
+
+        NotNull(result);
+        Single(result!.SubmodelElements!);
+        IsType<RelationshipElement>(result!.SubmodelElements![0]);
+        var relationShipElement = result.SubmodelElements[0] as RelationshipElement;
+        Equal(TestData.CreateFilledRelationshipElementWithBothModelReference().ToJson(), relationShipElement!.ToJson());
     }
 
     [Fact]
