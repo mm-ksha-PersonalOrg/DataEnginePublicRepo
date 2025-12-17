@@ -21,6 +21,9 @@ public partial class SemanticIdHandler(ILogger<SemanticIdHandler> logger, IOptio
     private readonly string _internalSemanticId = semantics.Value.InternalSemanticId;
     private const string RangeMinimumPostFixSeparator = "_min";
     private const string RangeMaximumPostFixSeparator = "_max";
+    private const string EntityGlobalAssetIdPostFix = "_globalAssetId";
+    private const string RelationshipElementFirstPostFixSeparator = "_first";
+    private const string RelationshipElementSecondPostFixSeparator = "_second";
 
     private static readonly HashSet<DataTypeDefXsd> StringTypes =
     [
@@ -98,6 +101,8 @@ public partial class SemanticIdHandler(ILogger<SemanticIdHandler> logger, IOptio
             MultiLanguageProperty mlp => ExtractMultiLanguageProperty(mlp),
             Range range => ExtractRange(range),
             ReferenceElement re => ExtractReferenceElement(re),
+            RelationshipElement relationshipElement => ExtractRelationshipElement(relationshipElement),
+            Entity entity => ExtractEntity(entity),
             _ => CreateLeafNode(submodelElementTemplate)
         };
     }
@@ -146,16 +151,110 @@ public partial class SemanticIdHandler(ILogger<SemanticIdHandler> logger, IOptio
         return node;
     }
 
-    private SemanticLeafNode? ExtractReferenceElement(ReferenceElement referenceElement)
+    private SemanticBranchNode? ExtractReferenceElement(ReferenceElement referenceElement)
     {
         if (referenceElement.Value == null || referenceElement.Value.Type == ReferenceTypes.ExternalReference)
         {
             return null;
         }
 
-        var semanticId = GetSemanticId(referenceElement, referenceElement.IdShort!);
-        var cardinality = GetCardinality(referenceElement);
-        return new SemanticLeafNode(semanticId, string.Empty, DataType.StringArray, cardinality);
+        return ExtractFormReference(referenceElement.Value, GetSemanticId(referenceElement, referenceElement.IdShort!), GetCardinality(referenceElement));
+    }
+
+    private SemanticBranchNode? ExtractRelationshipElement(RelationshipElement relationshipElement)
+    {
+        if (relationshipElement.First.Type == ReferenceTypes.ExternalReference && relationshipElement.Second.Type == ReferenceTypes.ExternalReference)
+        {
+            return null;
+        }
+
+        var semanticId = GetSemanticId(relationshipElement);
+        var cardinality = GetCardinality(relationshipElement);
+        var relationshipElementNode = new SemanticBranchNode(semanticId, cardinality);
+
+        if (relationshipElement.First.Type == ReferenceTypes.ModelReference)
+        {
+            var referenceNode = ExtractFormReference(relationshipElement.First, $"{semanticId}{RelationshipElementFirstPostFixSeparator}", cardinality);
+            if (referenceNode != null)
+            {
+                relationshipElementNode.AddChild(referenceNode);
+            }
+        }
+
+        if (relationshipElement.Second.Type == ReferenceTypes.ModelReference)
+        {
+            var referenceNode = ExtractFormReference(relationshipElement.Second, $"{semanticId}{RelationshipElementSecondPostFixSeparator}", cardinality);
+            if (referenceNode != null)
+            {
+                relationshipElementNode.AddChild(referenceNode);
+            }
+        }
+
+        return relationshipElementNode;
+    }
+
+    private SemanticBranchNode? ExtractFormReference(IReference reference, string semanticId, Cardinality cardinality)
+    {
+        var keys = reference.Keys;
+        if (keys.Count <= 0)
+        {
+            return null;
+        }
+
+        var branchNode = new SemanticBranchNode(semanticId, cardinality);
+
+        foreach (var group in keys.GroupBy(k => k.Type))
+        {
+            group.Select((_, index) => new SemanticLeafNode(group.Count() > 1
+                                                                  ? $"{semanticId}{_mlpPostFixSeparator}{group.Key}{_mlpPostFixSeparator}{index}"
+                                                                  : $"{semanticId}{_mlpPostFixSeparator}{group.Key}",
+                                                              string.Empty,
+                                                              DataType.String,
+                                                              Cardinality.ZeroToOne))
+                 .ToList()
+                 .ForEach(branchNode.AddChild);
+        }
+
+        return branchNode;
+    }
+
+    private SemanticBranchNode ExtractEntity(Entity entity)
+    {
+        var semanticId = GetSemanticId(entity, entity.IdShort!);
+        var node = new SemanticBranchNode(semanticId, GetCardinality(entity));
+        if (entity.EntityType == EntityType.SelfManagedEntity)
+        {
+            var globalAssetIdNode = new SemanticLeafNode(semanticId + EntityGlobalAssetIdPostFix, string.Empty, DataType.String, Cardinality.One);
+            node.AddChild(globalAssetIdNode);
+            if (entity.SpecificAssetIds != null)
+            {
+                foreach (var specificAssetId in entity.SpecificAssetIds)
+                {
+                    IHasSemantics specificAsset = specificAssetId;
+                    if (specificAsset.SemanticId == null)
+                    {
+                        continue;
+                    }
+
+                    var specificAssetIdNode = new SemanticLeafNode(GetSemanticId(specificAssetId), string.Empty, DataType.String, Cardinality.One);
+                    node.AddChild(specificAssetIdNode);
+                }
+            }
+        }
+
+        if (entity.Statements?.Count > 0)
+        {
+            foreach (var child in entity.Statements.Select(Extract).OfType<SemanticTreeNode>())
+            {
+                node.AddChild(child);
+            }
+        }
+        else
+        {
+            logger.LogWarning("No elements defined in Entity {EntityIdShort}", entity.IdShort);
+        }
+
+        return node;
     }
 
     private string ExtractSemanticId(ISubmodelElement element)
@@ -234,7 +333,6 @@ public partial class SemanticIdHandler(ILogger<SemanticIdHandler> logger, IOptio
             Range r => GetDataTypeFromValueType(r.ValueType),
             File => DataType.String,
             Blob => DataType.String,
-            ReferenceElement => DataType.StringArray,
             _ => DataType.Unknown
         };
     }
@@ -371,12 +469,20 @@ public partial class SemanticIdHandler(ILogger<SemanticIdHandler> logger, IOptio
                 FillOutBlob(blob, values);
                 break;
 
+            case RelationshipElement relationship:
+                FillOutRelationshipElement(relationship, values);
+                break;
+
             case ReferenceElement reference:
                 FillOutReferenceElement(reference, values);
                 break;
 
             case Range range:
                 FillOutRange(range, values);
+                break;
+
+            case Entity entity:
+                FillOutEntity(entity, values);
                 break;
 
             default:
@@ -469,6 +575,59 @@ public partial class SemanticIdHandler(ILogger<SemanticIdHandler> logger, IOptio
         }
     }
 
+    public void FillOutEntity(Entity entity, SemanticTreeNode values)
+    {
+        if (entity.EntityType == EntityType.SelfManagedEntity)
+        {
+            FillOutSelfManagedEntity(entity, values);
+        }
+
+        if (entity?.Statements == null || entity.Statements.Count == 0)
+        {
+            return;
+        }
+
+        FillOutSubmodelElementValue(entity.Statements, values);
+    }
+
+    private void FillOutSelfManagedEntity(Entity entity, SemanticTreeNode values)
+    {
+        var semanticId = GetSemanticId(entity, entity.IdShort!);
+
+        if (FindNodeBySemanticId(values, semanticId).FirstOrDefault() is not SemanticBranchNode valueNode)
+        {
+            return;
+        }
+
+        var globalAssetSemanticId = semanticId + EntityGlobalAssetIdPostFix;
+
+        var globalAssetNode = valueNode.Children
+                                       .OfType<SemanticLeafNode>()
+                                       .FirstOrDefault(c => c.SemanticId == globalAssetSemanticId);
+
+        if (globalAssetNode != null)
+        {
+            entity.GlobalAssetId = globalAssetNode.Value;
+        }
+
+        if (entity.SpecificAssetIds != null)
+        {
+            foreach (var specificAssetId in entity.SpecificAssetIds)
+            {
+                var specSemanticId = GetSemanticId(specificAssetId);
+
+                var specNode = valueNode.Children
+                                        .OfType<SemanticLeafNode>()
+                                        .FirstOrDefault(c => c.SemanticId == specSemanticId);
+
+                if (specNode != null)
+                {
+                    specificAssetId.Value = specNode.Value;
+                }
+            }
+        }
+    }
+
     private static void FillOutProperty(Property valueElement, SemanticTreeNode values)
     {
         if (values is SemanticLeafNode leafValueNode)
@@ -515,95 +674,85 @@ public partial class SemanticIdHandler(ILogger<SemanticIdHandler> logger, IOptio
     {
         if (referenceElement?.Value?.Type != ReferenceTypes.ModelReference)
         {
-            logger.LogInformation("ReferenceElement does not contain a ModelReference for SemanticId '{SemanticId}'. Skipping population.", referenceElement?.SemanticId);
+            logger.LogInformation("ReferenceElement does not contain a ModelReference for SemanticId '{SemanticId}'. Skipping population.", GetSemanticId(referenceElement!));
             return;
         }
 
-        switch (semanticNode)
-        {
-            case SemanticBranchNode branchNode:
-                FillReferenceElementFromBranch(referenceElement, branchNode);
-                break;
+        ProcessReferenceNode(referenceElement.Value, semanticNode, GetSemanticId(referenceElement));
+    }
 
-            case SemanticLeafNode leafNode:
-                FillReferenceElementFromLeaf(referenceElement, leafNode);
-                break;
+    private void FillOutRelationshipElement(RelationshipElement relationshipElement, SemanticTreeNode semanticTreeNode)
+    {
+        var semanticId = semanticTreeNode.SemanticId;
+
+        ProcessRelationshipReference(relationshipElement.First, semanticTreeNode, semanticId, RelationshipElementFirstPostFixSeparator);
+
+        ProcessRelationshipReference(relationshipElement.Second, semanticTreeNode, semanticId, RelationshipElementSecondPostFixSeparator);
+    }
+
+    private void ProcessReferenceNode(IReference reference, SemanticTreeNode semanticNode, string semanticId)
+    {
+        if (semanticNode is not SemanticBranchNode branchNode)
+        {
+            logger.LogWarning("Expected SemanticBranchNode for SemanticId '{SemanticId}', but got {NodeType}. Skipping population.", semanticId, semanticNode.GetType().Name);
+            return;
+        }
+
+        var keys = reference.Keys;
+
+        if (keys.Count <= 0)
+        {
+            logger.LogInformation("ReferenceElement has no keys for SemanticId '{SemanticId}'. Nothing to populate.", semanticId);
+            return;
+        }
+
+        foreach (var group in keys.GroupBy(k => k.Type))
+        {
+            ProcessReferenceKeyGroup(group, branchNode, semanticId);
         }
     }
 
-    private void FillReferenceElementFromBranch(ReferenceElement referenceElement, SemanticBranchNode branchNode)
+    private void ProcessReferenceKeyGroup(IGrouping<KeyTypes, IKey> group, SemanticBranchNode branchNode, string semanticId)
     {
-        var semanticId = branchNode.SemanticId;
-        var leafNodes = branchNode.Children.OfType<SemanticLeafNode>().ToList();
-
-        if (leafNodes.Count == 0)
+        var keyList = group.ToList();
+        for (var i = 0; i < keyList.Count; i++)
         {
-            logger.LogInformation("No leaf nodes found for SemanticId '{SemanticId}'. Skipping ReferenceElement population.", semanticId);
-            return;
-        }
+            var indexedSemanticId = keyList.Count > 1
+                                        ? $"{semanticId}{_mlpPostFixSeparator}{group.Key}{_mlpPostFixSeparator}{i}"
+                                        : $"{semanticId}{_mlpPostFixSeparator}{group.Key}";
 
-        var keys = referenceElement.Value?.Keys;
-        if (keys == null || keys.Count == 0)
-        {
-            logger.LogInformation("ReferenceElement template has no keys for SemanticId '{SemanticId}'. Skipping population.", semanticId);
-            return;
-        }
+            var leafNode = branchNode.Children
+                                     .OfType<SemanticLeafNode>()
+                                     .FirstOrDefault(child => child.SemanticId == indexedSemanticId);
 
-        var countToFill = Math.Min(keys.Count, leafNodes.Count);
-        for (var i = 0; i < countToFill; i++)
-        {
-            keys[i].Value = leafNodes[i].Value;
+            if (leafNode != null)
+            {
+                keyList[i].Value = !string.IsNullOrEmpty(leafNode.Value) ? leafNode.Value : keyList[i].Value;
+            }
+            else
+            {
+                logger.LogWarning("No matching leaf node found for SemanticId '{IndexedSemanticId}'.", indexedSemanticId);
+            }
         }
     }
 
-    private void FillReferenceElementFromLeaf(ReferenceElement referenceElement, SemanticLeafNode leafNode)
+    private void ProcessRelationshipReference(IReference reference, SemanticTreeNode semanticTreeNode, string semanticId, string postfixSeparator)
     {
-        var value = leafNode.Value?.ToString();
-        if (string.IsNullOrEmpty(value))
+        if (reference.Type != ReferenceTypes.ModelReference)
         {
-            logger.LogWarning("Leaf node value is null or empty for SemanticId '{SemanticId}'. Skipping.", leafNode.SemanticId);
             return;
         }
 
-        if (value!.Contains(_mlpPostFixSeparator))
+        var searchPattern = semanticId + postfixSeparator;
+        var valueNode = FindNodeBySemanticId(semanticTreeNode, searchPattern).FirstOrDefault();
+
+        if (valueNode != null)
         {
-            FillReferenceFromSeparatedValue(referenceElement, leafNode, value);
+            ProcessReferenceNode(reference, valueNode, searchPattern);
         }
         else
         {
-            FillReferenceFromSingleValue(referenceElement, leafNode, value);
-        }
-    }
-
-    private void FillReferenceFromSeparatedValue(ReferenceElement referenceElement, SemanticLeafNode leafNode, string value)
-    {
-        var separatedKeyValues = value.Split([_mlpPostFixSeparator], StringSplitOptions.TrimEntries);
-        var keys = referenceElement.Value?.Keys;
-
-        if (keys == null || keys.Count == 0)
-        {
-            logger.LogInformation("ReferenceElement template has no keys for SemanticId '{SemanticId}'. Skipping population from leaf.", leafNode.SemanticId);
-            return;
-        }
-
-        var keysToProcess = Math.Min(keys.Count, separatedKeyValues.Length);
-        for (var i = 0; i < keysToProcess; i++)
-        {
-            keys[i].Value = separatedKeyValues[i];
-        }
-    }
-
-    private static void FillReferenceFromSingleValue(ReferenceElement referenceElement, SemanticLeafNode leafNode, string value)
-    {
-        var submodelKey = referenceElement.Value?.Keys.FirstOrDefault(k => k.Type == KeyTypes.Submodel);
-
-        if (submodelKey != null)
-        {
-            submodelKey.Value = value;
-        }
-        else
-        {
-            referenceElement.Value?.Keys.Add(new Key(KeyTypes.Submodel, leafNode.Value));
+            logger.LogWarning("No matching node found for reference with pattern: {Pattern}", searchPattern);
         }
     }
 
@@ -712,6 +861,7 @@ public partial class SemanticIdHandler(ILogger<SemanticIdHandler> logger, IOptio
         {
             ISubmodelElementCollection c => c.Value,
             ISubmodelElementList l => l.Value,
+            IEntity entity => entity.Statements,
             _ => null
         };
     }

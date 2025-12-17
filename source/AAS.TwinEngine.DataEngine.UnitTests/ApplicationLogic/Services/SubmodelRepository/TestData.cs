@@ -88,8 +88,8 @@ internal static class TestData
     public static ReferenceElement CreateReferenceElementWithEmptyValues()
     {
         return new ReferenceElement(
-                                    idShort:"ReferenceElementWithEmptyValues",
-                                    semanticId:new Reference(
+                                    idShort: "ReferenceElementWithEmptyValues",
+                                    semanticId: new Reference(
                                                              ReferenceTypes.ExternalReference,
                                                              [
                                                                  new Key(KeyTypes.GlobalReference, "http://example.com/idta/digital-nameplate/reference-element/empty-values")
@@ -116,8 +116,8 @@ internal static class TestData
     public static ReferenceElement CreateReferenceElementWithExternalReference()
     {
         return new ReferenceElement(
-                                    idShort:"ExternalReferenceElement",
-                                    semanticId:new Reference(
+                                    idShort: "ExternalReferenceElement",
+                                    semanticId: new Reference(
                                                              ReferenceTypes.ExternalReference,
                                                              [
                                                                  new Key(KeyTypes.GlobalReference, "http://example.com/idta/digital-nameplate/reference-element/external-reference")
@@ -136,7 +136,7 @@ internal static class TestData
     {
         return new ReferenceElement(
                                     idShort: "ModelReferenceReferenceElement",
-                                    semanticId:new Reference(
+                                    semanticId: new Reference(
                                                              ReferenceTypes.ExternalReference,
                                                              [
                                                                  new Key(KeyTypes.GlobalReference, "http://example.com/idta/digital-nameplate/reference-element/model-reference")
@@ -146,11 +146,92 @@ internal static class TestData
                                                          [
                                                                 new Key(KeyTypes.Submodel, ""), // left intentionally empty for FillOut tests
                                                                 new Key(KeyTypes.SubmodelElementList, "ContactName"),
-                                                                new Key(KeyTypes.SubmodelElement, "0"),
+                                                                new Key(KeyTypes.SubmodelElementCollection, "0"),
+                                                                new Key(KeyTypes.SubmodelElementCollection, "1"),
                                                                 new Key(KeyTypes.Property, "Name")
                                                              ]
                                                          )
                                     );
+    }
+
+    public static RelationshipElement CreateRelationshipElementWithBothExternalReference()
+    {
+        return new RelationshipElement(first: new Reference(
+                                                            ReferenceTypes.ExternalReference,
+                                                            [
+                                                                new Key(KeyTypes.GlobalReference,
+                                                                        "http://example.com/idta/digital-nameplate/relationship-element/first")
+                                                            ]),
+                                       second: new Reference(
+                                                             ReferenceTypes.ExternalReference,
+                                                             [
+                                                                 new Key(KeyTypes.GlobalReference,
+                                                                         "http://example.com/idta/digital-nameplate/relationship-element/second")
+                                                             ]),
+                                       idShort: "RelationshipElement",
+                                       semanticId: new Reference(
+                                                                 ReferenceTypes.ExternalReference,
+                                                                 [
+                                                                     new Key(KeyTypes.GlobalReference,
+                                                                             "http://example.com/idta/digital-nameplate/relationship-element/both-external-reference")
+                                                                 ])
+                                      );
+    }
+
+    public static RelationshipElement CreateRelationshipElementWithOneExternalReferenceAndOneModelReference()
+    {
+        return new RelationshipElement(first: new Reference(
+                                                            ReferenceTypes.ExternalReference,
+                                                            [
+                                                                new Key(KeyTypes.GlobalReference,
+                                                                        "http://example.com/idta/digital-nameplate/relationship-element/first")
+                                                            ]),
+                                       second: new Reference(
+                                                             ReferenceTypes.ModelReference,
+                                                             [
+                                                                 new Key(KeyTypes.Submodel, ""), // left intentionally empty for FillOut tests
+                                                                 new Key(KeyTypes.SubmodelElementList, "ContactName"),
+                                                                 new Key(KeyTypes.SubmodelElement, "0"),
+                                                                 new Key(KeyTypes.Property, "Name")
+                                                             ]
+                                                            ),
+                                       idShort: "RelationshipElement",
+                                       semanticId: new Reference(
+                                                                 ReferenceTypes.ExternalReference,
+                                                                 [
+                                                                     new Key(KeyTypes.GlobalReference,
+                                                                             "http://example.com/idta/digital-nameplate/relationship-element/second-model-reference")
+                                                                 ])
+                                      );
+    }
+
+    public static RelationshipElement CreateRelationshipElementWithBothModelReference()
+    {
+        return new RelationshipElement(first: new Reference(
+                                                            ReferenceTypes.ModelReference,
+                                                            [
+                                                                new Key(KeyTypes.Submodel, ""), // left intentionally empty for FillOut tests
+                                                                new Key(KeyTypes.SubmodelElementList, ""),
+                                                                new Key(KeyTypes.SubmodelElement, ""),
+                                                                new Key(KeyTypes.Property, "")
+                                                            ]
+                                                           ),
+                                       second: new Reference(
+                                                             ReferenceTypes.ModelReference,
+                                                             [
+                                                                 new Key(KeyTypes.Submodel, ""), // left intentionally empty for FillOut tests
+                                                                 new Key(KeyTypes.SubmodelElementList, ""),
+                                                                 new Key(KeyTypes.Property, "")
+                                                             ]
+                                                            ),
+                                       idShort: "RelationshipElement",
+                                       semanticId: new Reference(
+                                                                 ReferenceTypes.ExternalReference,
+                                                                 [
+                                                                     new Key(KeyTypes.GlobalReference,
+                                                                             "http://example.com/idta/digital-nameplate/relationship-element/both-model-reference")
+                                                                 ])
+                                      );
     }
 
     public static Range CreateRange()
@@ -208,6 +289,32 @@ internal static class TestData
                             value: "ZeroToMany")
           ],
           value: [
+            CreateContactName(),
+          ]
+        );
+    }
+
+    public static Entity CreateEntityNode()
+    {
+        return new Entity(
+          idShort: "EntityNode",
+          entityType: EntityType.SelfManagedEntity,
+          globalAssetId: "",
+          specificAssetIds: specificAssetIds,
+          semanticId: new Reference(
+            ReferenceTypes.ExternalReference,
+            [
+              new Key(KeyTypes.Entity, "http://example.com/idta/digital-nameplate/entitynode")
+            ]
+          ),
+          qualifiers:
+          [
+              new Qualifier(
+                            type: "ExternalReference",
+                            valueType: DataTypeDefXsd.String,
+                            value: "ZeroToMany")
+          ],
+          statements: [
             CreateContactName(),
           ]
         );
@@ -405,8 +512,28 @@ internal static class TestData
           submodelElements: [
             CreateReferenceElementWithExternalReference(),
             CreateReferenceElementWithModelReference(),
+            CreateReferenceElementWithModelReferenceElementWithEmptyKey(),
             CreateReferenceElementWithEmptyValues()
             ]);
+    }
+
+    public static Submodel CreateSubmodelRelationshipElement()
+    {
+        return new Submodel(
+                            id: "http://example.com/idta/digital-nameplate",
+                            idShort: "DigitalNameplate",
+                            semanticId: new Reference(
+                                                      ReferenceTypes.ExternalReference,
+                                                      [
+                                                          new Key(KeyTypes.Submodel, "http://example.com/idta/digital-nameplate/semantic-id")
+                                                      ]
+                                                     ),
+                            submodelElements:
+                            [
+                                CreateRelationshipElementWithBothExternalReference(),
+                                CreateRelationshipElementWithBothModelReference(),
+                                CreateRelationshipElementWithOneExternalReferenceAndOneModelReference()
+                            ]);
     }
 
     public static Submodel CreateSubmodelWithManufacturerNameWithOutElements()
@@ -460,7 +587,7 @@ internal static class TestData
           ),
           submodelElements: [
             CreateManufacturerName(),
-        new Property(
+          new Property(
           idShort: "ModelType",
           valueType: DataTypeDefXsd.Double,
           value: "", // left intentionally empty for FillOut tests
@@ -482,7 +609,8 @@ internal static class TestData
         CreateContactInformation(),
         CreateThumbnail(),
         CreateBlob(),
-            CreateRange(),
+        CreateRange(),
+        CreateEntityNode(),
           ]
         );
     }
@@ -612,6 +740,8 @@ internal static class TestData
 
         semanticTreeNode.AddChild(CreateRangeTreeNode());
 
+        semanticTreeNode.AddChild(CreateEntityTreeNode());
+
         return semanticTreeNode;
     }
 
@@ -677,29 +807,64 @@ internal static class TestData
         return rangeElement;
     }
 
-    public static SemanticTreeNode CreateReferenceElementTreeNodeWhereValueIsStringWithoutSeparator() => new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "http://example.com/idta/digital-nameplate", DataType.String, Cardinality.Unknown);
-
-    public static SemanticTreeNode CreateReferenceElementTreeNodeWhereValueIsStringWithSeparator() => new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "http://example.com/idta/digital-nameplate_NamePlate_1", DataType.String, Cardinality.Unknown);
-
-    public static SemanticTreeNode CreateReferenceElementTreeNodeWhereValueIsStringWithSeparatorHasAllValue() => new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "http://example.com/idta/digital-nameplate_NamePlate_1_ManufacturerName", DataType.String, Cardinality.Unknown);
-
-    public static SemanticTreeNode CreateReferenceElementTreeNodeWhereValueIsInMultipleLeafNode()
+    public static SemanticTreeNode CreateReferenceElementTreeNodeWhereEachValueOfLeafIsPresent()
     {
         var branchNode = new SemanticBranchNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", Cardinality.Unknown);
-        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "http://example.com/idta/digital-nameplate", DataType.String, Cardinality.Unknown));
-        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "NamePlate", DataType.String, Cardinality.Unknown));
-        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "1", DataType.String, Cardinality.Unknown));
+        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference_Submodel", "http://example.com/idta/digital-nameplate", DataType.String, Cardinality.Unknown));
+        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference_SubmodelElementList", "NamePlate", DataType.String, Cardinality.Unknown));
+        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference_SubmodelElementCollection_0", "1", DataType.String, Cardinality.Unknown));
+        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference_SubmodelElementCollection_1", "3", DataType.String, Cardinality.Unknown));
+        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference_Property", "ManufacturerName", DataType.String, Cardinality.Unknown));
         return branchNode;
     }
 
-    public static SemanticTreeNode CreateReferenceElementTreeNodeWhereValueIsInMultipleLeafNodeHasAllValue()
+    public static SemanticTreeNode CreateReferenceElementTreeNodeWhereEachValueOfLeafIsNotPresent()
     {
         var branchNode = new SemanticBranchNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", Cardinality.Unknown);
-        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "http://example.com/idta/digital-nameplate", DataType.String, Cardinality.Unknown));
-        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "NamePlate", DataType.String, Cardinality.Unknown));
-        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "1", DataType.String, Cardinality.Unknown));
-        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference", "ManufacturerName", DataType.String, Cardinality.Unknown));
+        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference_Submodel", "http://example.com/idta/digital-nameplate", DataType.String, Cardinality.Unknown));
+        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference_SubmodelElementList", "NamePlate", DataType.String, Cardinality.Unknown));
+        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference_SubmodelElementCollection_0", "1", DataType.String, Cardinality.Unknown));
+        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference_SubmodelElementCollection_1", "3", DataType.String, Cardinality.Unknown));
+        branchNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/reference-element/model-reference_Property", "", DataType.String, Cardinality.Unknown));
         return branchNode;
+    }
+
+    public static SemanticTreeNode CreateRelationShipElementHaveOneModelReferenceWhereEachValueOfLeafIsPresent()
+    {
+        var relationShipBranch = new SemanticBranchNode("http://example.com/idta/digital-nameplate/relationship-element/second-model-reference", Cardinality.Unknown);
+        var secondReferenceBranch = new SemanticBranchNode("http://example.com/idta/digital-nameplate/relationship-element/second-model-reference_second",
+                                                           Cardinality.Unknown);
+        secondReferenceBranch.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/second-model-reference_second_Submodel",
+                                                            "NameplateSubmodel", DataType.String, Cardinality.One));
+        secondReferenceBranch.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/second-model-reference_second_SubmodelElementList",
+                                                            "ContactName", DataType.String, Cardinality.One));
+        secondReferenceBranch.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/second-model-reference_second_SubmodelElement",
+                                                            "0", DataType.String, Cardinality.One));
+        secondReferenceBranch.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/second-model-reference_second_Property",
+                                                            "ManufacturerName", DataType.String, Cardinality.One));
+        relationShipBranch.AddChild(secondReferenceBranch);
+        return relationShipBranch;
+    }
+
+    public static SemanticTreeNode CreateRelationshipElementWithBothModelReferenceWhereEachValueOfLeafIsNotPresent()
+    {
+        var branch = new SemanticBranchNode("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference", Cardinality.Unknown);
+
+        var first = new SemanticBranchNode("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_first", Cardinality.Unknown);
+        first.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_first_Submodel", "TestSubmodel", DataType.String, Cardinality.Unknown));
+        first.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_first_SubmodelElementList", "ContactList", DataType.String, Cardinality.Unknown));
+        first.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_first_SubmodelElement", "2", DataType.String, Cardinality.Unknown));
+        first.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_first_Property", "", DataType.String, Cardinality.Unknown));
+
+        var second = new SemanticBranchNode("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_second", Cardinality.Unknown);
+        second.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_second_Submodel", "NamePlate", DataType.String, Cardinality.One));
+        second.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_second_SubmodelElementList", "", DataType.String, Cardinality.One));
+        second.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/relationship-element/both-model-reference_second_Property", "URL", DataType.String, Cardinality.One));
+        branch.AddChild(first);
+        branch.AddChild(second);
+        branch.AddChild(second);
+
+        return branch;
     }
 
     public static SemanticTreeNode CreateContactListTreeNode(string testObject = "")
@@ -715,6 +880,16 @@ internal static class TestData
         var contactInformation = new SemanticBranchNode("http://example.com/idta/digital-nameplate/contact-information", Cardinality.ZeroToMany);
         contactInformation.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/contact-name", $"Test{testObject} John Doe", DataType.String, Cardinality.One));
         return contactInformation;
+    }
+
+    public static SemanticTreeNode CreateEntityTreeNode(string testObject = "")
+    {
+        var entityNode = new SemanticBranchNode("http://example.com/idta/digital-nameplate/entitynode", Cardinality.ZeroToMany);
+        entityNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/entitynode_globalAssetId", "urn:uuid:123e4567-e89b-12d3-a456-426614174000", DataType.String, Cardinality.One));
+        entityNode.AddChild(new SemanticLeafNode("https://example.com/cd/manufacturer", "manufacturer_Value", DataType.String, Cardinality.One));
+        entityNode.AddChild(new SemanticLeafNode("https://example.com/cd/serialnumber", "serialnumber_Value", DataType.String, Cardinality.One));
+        entityNode.AddChild(new SemanticLeafNode("http://example.com/idta/digital-nameplate/contact-name", $"Test{testObject} John Doe", DataType.String, Cardinality.One));
+        return entityNode;
     }
 
     public static MultiLanguageProperty CreateFilledManufacturerName() => new(
@@ -842,23 +1017,23 @@ internal static class TestData
         CreateFilledContactName()
       ]
     );
-    
+
     public static ReferenceElement CreateFilledReferenceElementWithExternalReference() => new(
-        idShort: "ExternalReferenceElement",
-        semanticId: new Reference(
-            ReferenceTypes.ExternalReference,
-            [
-                new Key(KeyTypes.GlobalReference, "http://example.com/idta/digital-nameplate/reference-element/external-reference")
-            ]
-        ),
-        value: new Reference(
-            ReferenceTypes.ExternalReference,
-            [
-                new Key(KeyTypes.GlobalReference, "http://example.com/idta/digital-nameplate/reference-element/external-reference-value1"),
+      idShort: "ExternalReferenceElement",
+      semanticId: new Reference(
+          ReferenceTypes.ExternalReference,
+          [
+              new Key(KeyTypes.GlobalReference, "http://example.com/idta/digital-nameplate/reference-element/external-reference")
+          ]
+      ),
+      value: new Reference(
+          ReferenceTypes.ExternalReference,
+          [
+              new Key(KeyTypes.GlobalReference, "http://example.com/idta/digital-nameplate/reference-element/external-reference-value1"),
                 new Key(KeyTypes.FragmentReference, "http://example.com/idta/digital-nameplate/reference-element/external-reference-value2")
-            ]
-        )
-    );
+          ]
+      )
+  );
 
     public static ReferenceElement CreateFilledReferenceElementWithModelReference() => new(
         idShort: "ModelReferenceReferenceElement",
@@ -873,11 +1048,143 @@ internal static class TestData
             [
                 new Key(KeyTypes.Submodel, "http://example.com/idta/digital-nameplate"),
                 new Key(KeyTypes.SubmodelElementList, "NamePlate"),
-                new Key(KeyTypes.SubmodelElement, "1"),
+                new Key(KeyTypes.SubmodelElementCollection, "1"),
+                new Key(KeyTypes.SubmodelElementCollection, "3"),
                 new Key(KeyTypes.Property, "ManufacturerName")
             ]
         )
     );
+
+    public static ReferenceElement CreateFilledReferenceElementWithModelReferenceWithTemplateValueForProperty() => new(
+                                                                                           idShort: "ModelReferenceReferenceElement",
+                                                                                           semanticId: new Reference(
+                                                                                                ReferenceTypes.ExternalReference,
+                                                                                                [
+                                                                                                    new Key(KeyTypes.GlobalReference, "http://example.com/idta/digital-nameplate/reference-element/model-reference")
+                                                                                                ]
+                                                                                               ),
+                                                                                           value: new Reference(
+                                                                                                ReferenceTypes.ModelReference,
+                                                                                                [
+                                                                                                    new Key(KeyTypes.Submodel, "http://example.com/idta/digital-nameplate"),
+                                                                                                    new Key(KeyTypes.SubmodelElementList, "NamePlate"),
+                                                                                                    new Key(KeyTypes.SubmodelElementCollection, "1"),
+                                                                                                    new Key(KeyTypes.SubmodelElementCollection, "3"),
+                                                                                                    new Key(KeyTypes.Property, "Name")
+                                                                                                ]
+                                                                                               )
+                                                                                          );
+
+    public static RelationshipElement CreateFilledRelationshipElementWithOneExternalReferenceAndOneModelReference()
+    {
+        return new RelationshipElement(first: new Reference(
+                                                            ReferenceTypes.ExternalReference,
+                                                            [
+                                                                new Key(KeyTypes.GlobalReference,
+                                                                        "http://example.com/idta/digital-nameplate/relationship-element/first")
+                                                            ]),
+                                       second: new Reference(
+                                                             ReferenceTypes.ModelReference,
+                                                             [
+                                                                 new Key(KeyTypes.Submodel, "NameplateSubmodel"),
+                                                                 new Key(KeyTypes.SubmodelElementList, "ContactName"),
+                                                                 new Key(KeyTypes.SubmodelElement, "0"),
+                                                                 new Key(KeyTypes.Property, "ManufacturerName")
+                                                             ]
+                                                            ),
+                                       idShort: "RelationshipElement",
+                                       semanticId: new Reference(
+                                                                 ReferenceTypes.ExternalReference,
+                                                                 [
+                                                                     new Key(KeyTypes.GlobalReference,
+                                                                             "http://example.com/idta/digital-nameplate/relationship-element/second-model-reference")
+                                                                 ])
+                                      );
+    }
+
+    public static RelationshipElement CreateFilledRelationshipElementWithBothModelReference()
+    {
+        return new RelationshipElement(first: new Reference(
+                                                            ReferenceTypes.ModelReference,
+                                                            [
+                                                                new Key(KeyTypes.Submodel, "TestSubmodel"),
+                                                                new Key(KeyTypes.SubmodelElementList, "ContactList"),
+                                                                new Key(KeyTypes.SubmodelElement, "2"),
+                                                                new Key(KeyTypes.Property, "")
+                                                            ]
+                                                           ),
+                                       second: new Reference(
+                                                             ReferenceTypes.ModelReference,
+                                                             [
+                                                                 new Key(KeyTypes.Submodel, "NamePlate"),
+                                                                 new Key(KeyTypes.SubmodelElementList, ""),
+                                                                 new Key(KeyTypes.Property, "URL")
+                                                             ]
+                                                            ),
+                                       idShort: "RelationshipElement",
+                                       semanticId: new Reference(
+                                                                 ReferenceTypes.ExternalReference,
+                                                                 [
+                                                                     new Key(KeyTypes.GlobalReference,
+                                                                             "http://example.com/idta/digital-nameplate/relationship-element/both-model-reference")
+                                                                 ])
+                                      );
+    }
+
+    public static Entity CreateFilledEntityNode() => new(
+        idShort: "EntityNode",
+        entityType: EntityType.SelfManagedEntity,
+        semanticId: new Reference(
+        ReferenceTypes.ExternalReference,
+            [
+                new Key(KeyTypes.SubmodelElementCollection, "http://example.com/idta/digital-nameplate/contact-information")
+            ]
+        ),
+        statements: [
+            CreateFilledContactName()
+        ]
+    );
+
+    public static List<ISpecificAssetId> specificAssetIds = new List<ISpecificAssetId>
+{
+    new SpecificAssetId(
+        name: "Manufacturer",
+        value: "ExampleCorp",
+        externalSubjectId: new Reference(
+            ReferenceTypes.ExternalReference,
+            [
+                new Key(KeyTypes.GlobalReference, "https://example.com/manufacturer")
+            ]
+        )
+    )
+    {
+        SemanticId = new Reference(
+            ReferenceTypes.ModelReference,
+            [
+                new Key(KeyTypes.ConceptDescription, "https://example.com/cd/manufacturer")
+            ]
+        )
+    },
+
+    new SpecificAssetId(
+        name: "SerialNumber",
+        value: "SN-12345-XYZ",
+        externalSubjectId: new Reference(
+            ReferenceTypes.ExternalReference,
+            [
+                new Key(KeyTypes.GlobalReference, "https://example.com/serial")
+            ]
+        )
+    )
+    {
+        SemanticId = new Reference(
+            ReferenceTypes.ModelReference,
+            [
+                new Key(KeyTypes.ConceptDescription, "https://example.com/cd/serialnumber")
+            ]
+        )
+    }
+};
 
     public static Submodel CreateFilledSubmodel() => new(
       id: "http://example.com/idta/digital-nameplate",
@@ -894,7 +1201,8 @@ internal static class TestData
         CreateFilledContactList(),
         CreateFilledContactInformation(),
         CreateFilledThumbnail(),
-        CreateFilledBlob()
+        CreateFilledBlob(),
+        CreateFilledEntityNode()
       ]
     );
 
