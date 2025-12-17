@@ -18,7 +18,7 @@ env:
   BUILD_CONFIGURATION: "Release"
   SOLUTION_PATH: source/AAS.TwinEngine.DataEngine.sln
   TEST_PROJECT: source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj
-  MODULE_TEST_PROJECT: source/AAS.TwinEngine.DataEngine.ModuleTests/AAS.TwinEngine.DataEngine.ModuleTests.csproj
+  MODULE_TEST_PROJECT: source/AAS.TwinEngine.DataEngine.IntegrationTests/AAS.TwinEngine.DataEngine.ModuleTests.csproj #TODO
 
 jobs:
 
