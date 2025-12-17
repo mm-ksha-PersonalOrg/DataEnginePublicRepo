@@ -92,10 +92,9 @@ jobs:
       - name: Combine Coverage Reports
         if: github.event.pull_request.head.repo.fork == false
         run: |
-          echo "# Test Report" > results.md
-          echo "## Test Results Summary" >> results.md
+          echo "# Test & Coverage Report" > results.md
           echo "" >> results.md
-          echo "**Conclusion:** ${{ steps.test-results.outputs.conclusion }}" >> results.md
+          echo "## Test Results Summary" >> results.md
           echo "" >> results.md
           echo "| Metric | Count |" >> results.md
           echo "|--------|-------|" >> results.md
@@ -104,12 +103,16 @@ jobs:
           echo "| ⏭️ Skipped | ${{ steps.test-results.outputs.skipped }} |" >> results.md
           echo "| ⏱️ Execution Time | ${{ steps.test-results.outputs.time }} ms |" >> results.md
           echo "" >> results.md
-          echo "[View Detailed Test Results](${{ steps.test-results.outputs.url_html }})" >> results.md
+          echo "🔗 [View Detailed Test Results](${{ steps.test-results.outputs.url }})" >> results.md
           echo "" >> results.md
-          echo "## Unit Tests" >> results.md
+          echo "---" >> results.md
+          echo "" >> results.md
+          echo "## Code Coverage" >> results.md
+          echo "" >> results.md
+          echo "### Unit Tests Coverage" >> results.md
           cat code-coverage-results.md >> results.md
           echo "" >> results.md
-          echo "## Module Tests" >> results.md
+          echo "### Module Tests Coverage" >> results.md
           cat code-coverage-results.md >> results.md
 
 
