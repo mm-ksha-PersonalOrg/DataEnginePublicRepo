@@ -78,7 +78,8 @@ jobs:
         if: github.event.pull_request.head.repo.fork == false
         uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95 # v1.3.0
         with:
-          filename: "**/AAS.TwinEngine.DataEngine.IntegrationTests/**/coverage.cobertura.xml"
+          # filename: "**/AAS.TwinEngine.DataEngine.IntegrationTests/**/coverage.cobertura.xml"
+          filename: "**/AAS.TwinEngine.DataEngine.UnitTests/**/coverage.cobertura.xml"
           badge: false
           fail_below_min: false
           format: markdown
