@@ -17,7 +17,7 @@ env:
   BUILD_CONFIGURATION: "Release"
   SOLUTION_PATH: source/AAS.TwinEngine.DataEngine.sln
   TEST_PROJECT: source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj
-  MODULE_TEST_PROJECT: source/AAS.TwinEngine.DataEngine.IntegrationTests/AAS.TwinEngine.DataEngine.ModuleTests.csproj #TODO
+  MODULE_TEST_PROJECT: source/AAS.TwinEngine.DataEngine.ModuleTests/AAS.TwinEngine.DataEngine.ModuleTests.csproj #TODO
 
 jobs:
 
@@ -49,8 +49,7 @@ jobs:
         run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --no-build --logger "trx;LogFileName=unit_test_results.trx" --collect:"XPlat Code Coverage" --settings source/coverlet.runsettings
 
       - name: Run Module Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --no-build --logger "trx;LogFileName=module_test_results.trx" --collect:"XPlat Code Coverage" --settings source/coverlet.runsettings
-          # TODO
+        run: dotnet test ${{ env.MODULE_TEST_PROJECT }} --configuration Release --no-build --logger "trx;LogFileName=module_test_results.trx" --collect:"XPlat Code Coverage" --settings source/coverlet.runsettings
 
       - name: Publish Test Results
         uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8 # v2.3.0
@@ -79,8 +78,7 @@ jobs:
         if: github.event.pull_request.head.repo.fork == false
         uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95 # v1.3.0
         with:
-          # filename: "**/AAS.TwinEngine.DataEngine.IntegrationTests/**/coverage.cobertura.xml"
-          filename: "**/AAS.TwinEngine.DataEngine.UnitTests/**/coverage.cobertura.xml"
+          filename: "**/AAS.TwinEngine.DataEngine.ModuleTests/**/coverage.cobertura.xml"
           badge: false
           fail_below_min: false
           format: markdown
