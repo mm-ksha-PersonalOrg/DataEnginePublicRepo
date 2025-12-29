@@ -100,6 +100,52 @@ jobs:
           fi
           echo "" >> results.md
 
+      - name: Publish Coverage to Workflow Summary
+        if: always()
+        run: |
+          COVERAGE_JSON=coverlet/reports/Summary.json
+          
+          # Add header
+          echo "# 📊 Code Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Overall Summary
+          LINE=$(jq -r '.summary.linecoverage // "N/A"' $COVERAGE_JSON)
+          BRANCH=$(jq -r '.summary.branchcoverage // "N/A"' $COVERAGE_JSON)
+          COVERED_LINES=$(jq -r '.summary.coveredlines // 0' $COVERAGE_JSON)
+          COVERABLE_LINES=$(jq -r '.summary.coverablelines // 0' $COVERAGE_JSON)
+          COVERED_BRANCHES=$(jq -r '.summary.coveredbranches // 0' $COVERAGE_JSON)
+          TOTAL_BRANCHES=$(jq -r '.summary.totalbranches // 0' $COVERAGE_JSON)
+          
+          echo "## Overall Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Coverage | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|----------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Line Coverage** | **$LINE%** | $COVERED_LINES / $COVERABLE_LINES lines |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch Coverage** | **$BRANCH%** | $COVERED_BRANCHES / $TOTAL_BRANCHES branches |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Per-Assembly Coverage
+          echo "## Coverage by Assembly" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Assembly | Line Coverage | Branch Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|---------------|-----------------|" >> $GITHUB_STEP_SUMMARY
+          jq -r '.assemblies[] | "| \(.name) | \(.linecoverage)% | \(.branchcoverage)% |"' $COVERAGE_JSON >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Files below 80% coverage
+          echo "## ⚠️ Files Below 80% Line Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if jq -e '.assemblies[].classes[] | select(.linecoverage < 80)' $COVERAGE_JSON > /dev/null 2>&1; then
+            echo "| Class | Line Coverage | Covered/Total Lines |" >> $GITHUB_STEP_SUMMARY
+            echo "|-------|---------------|---------------------|" >> $GITHUB_STEP_SUMMARY
+            jq -r '.assemblies[].classes[] | select(.linecoverage < 80) | "| \(.name) | \(.linecoverage)% | \(.coveredlines)/\(.coverablelines) |"' $COVERAGE_JSON >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All files have at least 80% line coverage!" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📄 Full HTML coverage report is available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+
       - name: Add PR Comment
         if: github.event.pull_request.head.repo.fork == false
         uses: marocchino/sticky-pull-request-comment@v2
