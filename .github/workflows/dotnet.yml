@@ -92,8 +92,8 @@ jobs:
           echo "- Line coverage: $LINE%" >> results.md
           echo "- Branch coverage: $BRANCH%" >> results.md
           echo "" >> results.md
-          echo "### Files below ${{ env.COVERAGE_THRESHOLD }}% line coverage:" >> results.md
-          jq -r '.Files[] | select(.line < '${{ env.COVERAGE_THRESHOLD }}') | "\(.Name): \(.line)%"' $COVERAGE_JSON >> results.md
+          echo "### Files below 80% line coverage:" >> results.md
+          jq -r '.Files[] | select(.line < 80) | "\(.Name): \(.line)%"' $COVERAGE_JSON >> results.md
           echo "" >> results.md
           echo "- Full HTML coverage report is available in workflow artifacts." >> results.md
 
