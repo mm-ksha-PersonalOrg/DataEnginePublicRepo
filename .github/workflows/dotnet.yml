@@ -17,6 +17,7 @@ env:
   BUILD_CONFIGURATION: "Release"
   SOLUTION_PATH: source/AAS.TwinEngine.DataEngine.sln
   TEST_PROJECT: source/AAS.TwinEngine.DataEngine.UnitTests/AAS.TwinEngine.DataEngine.UnitTests.csproj
+  MODULE_TEST_PROJECT: source/AAS.TwinEngine.DataEngine.IntegrationTests/AAS.TwinEngine.DataEngine.ModuleTests.csproj
 
 jobs:
 
@@ -44,12 +45,62 @@ jobs:
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
+        run: dotnet test ${{ env.TEST_PROJECT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger "trx;LogFileName=unit_test_results.trx" --collect:"XPlat Code Coverage" --settings source/coverlet.runsettings
 
-        # https://github.com/dorny/test-reporter
+      - name: Run Module Tests
+        run: dotnet test ${{ env.MODULE_TEST_PROJECT }} --configuration Release --no-build --logger "trx;LogFileName=module_test_results.trx" --collect:"XPlat Code Coverage" --settings source/coverlet.runsettings
+
       - name: Publish Test Results
-        uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8 # v2.3.0
+        uses: dorny/test-reporter@v2
+        id: test-results
+        if: github.event.pull_request.head.repo.fork == false
         with:
-          name: Unit Tests
-          path: "**/test_results.trx"
+          name: Test Results (Unit & Module)
+          path: "**/*_test_results.trx"
           reporter: dotnet-trx
+
+      - name: Generate Combined Code Coverage Report
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.4.2
+        with:
+          reports: 'source/**/TestResults/**/coverage.cobertura.xml'
+          targetdir: 'coverlet/reports'
+          reporttypes: 'Html;HtmlSummary;Cobertura;MarkdownSummaryGithub;JsonSummary'
+
+      - name: Publish Code Coverage to Workflow Summary
+        if: success() || failure()
+        run: cat coverlet/reports/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Generate and Post PR Comment with Coverage
+        if: github.event.pull_request.head.repo.fork == false
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: 'coverlet/reports/Cobertura.xml'
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: false
+          indicators: true
+          output: both
+          thresholds: '80 80'
+
+      - name: Add Test Results to PR Comment
+        if: github.event.pull_request.head.repo.fork == false
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          path: code-coverage-results.md
+          header: test-coverage-report
+
+      - name: Upload TRX as Artifact (Fork PR fallback)
+        if: github.event.pull_request.head.repo.fork == true
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results
+          path: "**/*_test_results.trx"
+
+      - name: Upload Code Coverage Report
+        uses: actions/upload-artifact@v5
+        with:
+          name: code-coverage-report
+          path: coverlet/reports
