@@ -44,12 +44,75 @@ jobs:
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
+        run: dotnet test ${{ env.TEST_PROJECT }} \
+          --configuration ${{ env.BUILD_CONFIGURATION }} \
+          --no-build \
+          --logger "trx;LogFileName=unit_test_results.trx" \
+          --collect:"XPlat Code Coverage" \
+          --settings source/coverlet.runsettings
 
         # https://github.com/dorny/test-reporter
       - name: Publish Test Results
-        uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8 # v2.3.0
+        uses: dorny/test-reporter@v2
+        id: test-results
+        if: github.event.pull_request.head.repo.fork == false
         with:
-          name: Unit Tests
-          path: "**/test_results.trx"
+          name: Test Results (Unit & Module)
+          path: "**/*_test_results.trx"
           reporter: dotnet-trx
+
+      - name: Combine Test Results into PR Comment
+        if: github.event.pull_request.head.repo.fork == false
+        run: |
+          echo "# Test & Coverage Report" > results.md
+          echo "" >> results.md
+          echo "## Test Results Summary" >> results.md
+          echo "" >> results.md
+          echo "| Metric | Count |" >> results.md
+          echo "|--------|-------|" >> results.md
+          echo "| ✅ Passed | ${{ steps.test-results.outputs.passed }} |" >> results.md
+          echo "| ❌ Failed | ${{ steps.test-results.outputs.failed }} |" >> results.md
+          echo "| ⏭️ Skipped | ${{ steps.test-results.outputs.skipped }} |" >> results.md
+          echo "" >> results.md
+
+      - name: Install ReportGenerator
+        if: github.event.pull_request.head.repo.fork == false
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Generate Code Coverage Report (HTML + Cobertura)
+        if: github.event.pull_request.head.repo.fork == false
+        run: |
+          reportgenerator \
+            -reports:"source/**/TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"coverlet/reports" \
+            -reporttypes:"Html;HtmlSummary;Cobertura"
+
+      - name: Add Code Coverage to PR Comment
+        if: github.event.pull_request.head.repo.fork == false
+        run: |
+          echo "" >> results.md
+          echo "## 📊 Code Coverage" >> results.md
+          echo "" >> results.md
+          echo "- Full HTML coverage report available in workflow artifacts." >> results.md
+          echo "- Download **code-coverage-report** and open \`index.html\` for per-file details." >> results.md
+
+      - name: Add PR Comment
+        if: github.event.pull_request.head.repo.fork == false
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          path: results.md
+
+      - name: Upload TRX as Artifact (Fork PR fallback)
+        if: github.event.pull_request.head.repo.fork == true
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results
+          path: "**/*_test_results.trx"
+
+      - name: Upload Code Coverage Report as Artifact
+        if: github.event.pull_request.head.repo.fork == false
+        uses: actions/upload-artifact@v5
+        with:
+          name: code-coverage-report
+          path: coverlet/reports
