@@ -128,18 +128,23 @@ jobs:
           # Per-Assembly Coverage
           echo "## Coverage by Assembly" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Assembly | Line Coverage | Branch Coverage |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|---------------|-----------------|" >> $GITHUB_STEP_SUMMARY
-          jq -r '.assemblies[] | "| \(.name) | \(.linecoverage)% | \(.branchcoverage)% |"' $COVERAGE_JSON >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          if jq -e '.assemblies' $COVERAGE_JSON > /dev/null 2>&1; then
+            echo "| Assembly | Line Coverage | Branch Coverage |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|---------------|-----------------|" >> $GITHUB_STEP_SUMMARY
+            jq -r '.assemblies[]? | "| \(.name) | \(.linecoverage)% | \(.branchcoverage)% |"' $COVERAGE_JSON >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
           
           # Files below 80% coverage
           echo "## ⚠️ Files Below 80% Line Coverage" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if jq -e '.assemblies[].classes[] | select(.linecoverage < 80)' $COVERAGE_JSON > /dev/null 2>&1; then
+          
+          LOW_COVERAGE=$(jq -r '[.assemblies[]?.classes[]? | select(.linecoverage != null and .linecoverage < 80)] | length' $COVERAGE_JSON)
+          
+          if [ "$LOW_COVERAGE" -gt 0 ]; then
             echo "| Class | Line Coverage | Covered/Total Lines |" >> $GITHUB_STEP_SUMMARY
             echo "|-------|---------------|---------------------|" >> $GITHUB_STEP_SUMMARY
-            jq -r '.assemblies[].classes[] | select(.linecoverage < 80) | "| \(.name) | \(.linecoverage)% | \(.coveredlines)/\(.coverablelines) |"' $COVERAGE_JSON >> $GITHUB_STEP_SUMMARY
+            jq -r '.assemblies[]?.classes[]? | select(.linecoverage != null and .linecoverage < 80) | "| \(.name) | \(.linecoverage)% | \(.coveredlines)/\(.coverablelines) |"' $COVERAGE_JSON >> $GITHUB_STEP_SUMMARY
           else
             echo "✅ All files have at least 80% line coverage!" >> $GITHUB_STEP_SUMMARY
           fi
