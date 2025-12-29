@@ -59,11 +59,26 @@ jobs:
         with:
           reports: 'source/**/TestResults/**/coverage.cobertura.xml'
           targetdir: 'coverlet/reports'
-          reporttypes: 'Html;HtmlSummary;Cobertura;MarkdownSummaryGithub'
+          reporttypes: 'Html;HtmlSummary;Cobertura;MarkdownSummaryGithub;JsonSummary'
           
       - name: Publish Code Coverage Summary
         if: success() || failure()
         run: cat coverlet/reports/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Enforce 80% Code Coverage Threshold
+        run: |
+          COVERAGE_JSON=coverlet/reports/Summary.json
+          LINE_COVERAGE=$(jq -r '.summary.linecoverage // 0' $COVERAGE_JSON)
+          
+          echo "Current Line Coverage: $LINE_COVERAGE%"
+          
+          if (( $(echo "$LINE_COVERAGE < 80" | bc -l) )); then
+            echo "❌ Code coverage is below 80% threshold!"
+            echo "Required: 80%, Current: $LINE_COVERAGE%"
+            exit 1
+          else
+            echo "✅ Code coverage meets the 80% threshold"
+          fi
 
       - name: Upload TRX as Artifact (Fork PR fallback)
         if: github.event.pull_request.head.repo.fork == true
