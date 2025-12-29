@@ -93,9 +93,12 @@ jobs:
           echo "- Branch coverage: $BRANCH%" >> results.md
           echo "" >> results.md
           echo "### Files below 80% line coverage:" >> results.md
-          jq -r '.Files[] | select(.line < 80) | "\(.Name): \(.line)%"' $COVERAGE_JSON >> results.md
+          if jq -e '.Files' $COVERAGE_JSON > /dev/null 2>&1; then
+            jq -r '.Files[] | select(.line < 80) | "\(.Name): \(.line)%"' $COVERAGE_JSON >> results.md || echo "None" >> results.md
+          else
+            echo "No file coverage data available" >> results.md
+          fi
           echo "" >> results.md
-          echo "- Full HTML coverage report is available in workflow artifacts." >> results.md
 
       - name: Add PR Comment
         if: github.event.pull_request.head.repo.fork == false
