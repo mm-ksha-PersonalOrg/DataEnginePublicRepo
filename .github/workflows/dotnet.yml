@@ -48,68 +48,31 @@ jobs:
 
       - name: Publish Test Results
         uses: dorny/test-reporter@v2
-        id: test-results
         if: github.event.pull_request.head.repo.fork == false
         with:
           name: Test Results (Unit & Module)
           path: "**/*_test_results.trx"
           reporter: dotnet-trx
 
-      - name: Combine Test Results into PR Comment
-        if: github.event.pull_request.head.repo.fork == false
-        run: |
-          echo "# Test & Coverage Report" > results.md
-          echo "" >> results.md
-          echo "## Test Results Summary" >> results.md
-          echo "" >> results.md
-          echo "| Metric | Count |" >> results.md
-          echo "|--------|-------|" >> results.md
-          echo "| ✅ Passed | ${{ steps.test-results.outputs.passed }} |" >> results.md
-          echo "| ❌ Failed | ${{ steps.test-results.outputs.failed }} |" >> results.md
-          echo "| ⏭️ Skipped | ${{ steps.test-results.outputs.skipped }} |" >> results.md
-          echo "" >> results.md
-
       - name: Install ReportGenerator
-        if: github.event.pull_request.head.repo.fork == false
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
 
-      - name: Generate Code Coverage Report (HTML + Cobertura + JSON)
-        if: github.event.pull_request.head.repo.fork == false
+      - name: Generate Code Coverage Report
         run: |
           reportgenerator \
             -reports:"source/**/TestResults/**/coverage.cobertura.xml" \
             -targetdir:"coverlet/reports" \
             -reporttypes:"Html;HtmlSummary;Cobertura;JsonSummary"
 
-      - name: Add Code Coverage Summary to PR Comment
-        if: github.event.pull_request.head.repo.fork == false
-        run: |
-          COVERAGE_JSON=coverlet/reports/Summary.json
-          LINE=$(jq -r '.summary.linecoverage // "N/A"' $COVERAGE_JSON)
-          BRANCH=$(jq -r '.summary.branchcoverage // "N/A"' $COVERAGE_JSON)
-          echo "## 📊 Code Coverage Summary" >> results.md
-          echo "" >> results.md
-          echo "- Line coverage: $LINE%" >> results.md
-          echo "- Branch coverage: $BRANCH%" >> results.md
-          echo "" >> results.md
-          echo "### Files below 80% line coverage:" >> results.md
-          if jq -e '.assemblies' $COVERAGE_JSON > /dev/null 2>&1; then
-            jq -r '.assemblies[].classes[] | select(.linecoverage < 80) | "\(.name): \(.linecoverage)%"' $COVERAGE_JSON >> results.md || echo "None" >> results.md
-          else
-            echo "No detailed file coverage data available" >> results.md
-          fi
-          echo "" >> results.md
-
-      - name: Publish Coverage to Workflow Summary
-        if: always()
+      - name: Publish Code Coverage to Workflow Summary
+        if: success() || failure()
         run: |
           COVERAGE_JSON=coverlet/reports/Summary.json
           
-          # Add header
           echo "# 📊 Code Coverage Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          # Overall Summary
+          # Extract coverage metrics
           LINE=$(jq -r '.summary.linecoverage // "N/A"' $COVERAGE_JSON)
           BRANCH=$(jq -r '.summary.branchcoverage // "N/A"' $COVERAGE_JSON)
           COVERED_LINES=$(jq -r '.summary.coveredlines // 0' $COVERAGE_JSON)
@@ -117,6 +80,7 @@ jobs:
           COVERED_BRANCHES=$(jq -r '.summary.coveredbranches // 0' $COVERAGE_JSON)
           TOTAL_BRANCHES=$(jq -r '.summary.totalbranches // 0' $COVERAGE_JSON)
           
+          # Overall summary table
           echo "## Overall Coverage" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Metric | Coverage | Details |" >> $GITHUB_STEP_SUMMARY
@@ -125,17 +89,17 @@ jobs:
           echo "| **Branch Coverage** | **$BRANCH%** | $COVERED_BRANCHES / $TOTAL_BRANCHES branches |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          # Per-Assembly Coverage
-          echo "## Coverage by Assembly" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          # Assembly-level coverage
           if jq -e '.assemblies' $COVERAGE_JSON > /dev/null 2>&1; then
+            echo "## Coverage by Assembly" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Assembly | Line Coverage | Branch Coverage |" >> $GITHUB_STEP_SUMMARY
             echo "|----------|---------------|-----------------|" >> $GITHUB_STEP_SUMMARY
             jq -r '.assemblies[]? | "| \(.name) | \(.linecoverage)% | \(.branchcoverage)% |"' $COVERAGE_JSON >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
           
-          # Files below 80% coverage
+          # Low coverage files
           echo "## ⚠️ Files Below 80% Line Coverage" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
@@ -151,13 +115,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📄 Full HTML coverage report is available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
 
-      - name: Add PR Comment
-        if: github.event.pull_request.head.repo.fork == false
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          recreate: true
-          path: results.md
-
       - name: Upload TRX as Artifact (Fork PR fallback)
         if: github.event.pull_request.head.repo.fork == true
         uses: actions/upload-artifact@v5
@@ -165,8 +122,7 @@ jobs:
           name: test-results
           path: "**/*_test_results.trx"
 
-      - name: Upload Code Coverage Report as Artifact
-        if: github.event.pull_request.head.repo.fork == false
+      - name: Upload Code Coverage Report
         uses: actions/upload-artifact@v5
         with:
           name: code-coverage-report
