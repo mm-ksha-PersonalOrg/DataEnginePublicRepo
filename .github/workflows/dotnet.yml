@@ -73,22 +73,29 @@ jobs:
         if: github.event.pull_request.head.repo.fork == false
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
 
-      - name: Generate Code Coverage Report (HTML + Cobertura)
+      - name: Generate Code Coverage Report (HTML + Cobertura + JSON)
         if: github.event.pull_request.head.repo.fork == false
         run: |
           reportgenerator \
             -reports:"source/**/TestResults/**/coverage.cobertura.xml" \
             -targetdir:"coverlet/reports" \
-            -reporttypes:"Html;HtmlSummary;Cobertura"
+            -reporttypes:"Html;HtmlSummary;Cobertura;JsonSummary"
 
-      - name: Add Code Coverage to PR Comment
+      - name: Add Code Coverage Summary to PR Comment
         if: github.event.pull_request.head.repo.fork == false
         run: |
+          COVERAGE_JSON=coverlet/reports/Summary.json
+          LINE=$(jq '.line' $COVERAGE_JSON)
+          BRANCH=$(jq '.branch' $COVERAGE_JSON)
+          echo "## 📊 Code Coverage Summary" >> results.md
           echo "" >> results.md
-          echo "## 📊 Code Coverage" >> results.md
+          echo "- Line coverage: $LINE%" >> results.md
+          echo "- Branch coverage: $BRANCH%" >> results.md
           echo "" >> results.md
-          echo "- Full HTML coverage report available in workflow artifacts." >> results.md
-          echo "- Download **code-coverage-report** and open \`index.html\` for per-file details." >> results.md
+          echo "### Files below ${{ env.COVERAGE_THRESHOLD }}% line coverage:" >> results.md
+          jq -r '.Files[] | select(.line < '${{ env.COVERAGE_THRESHOLD }}') | "\(.Name): \(.line)%"' $COVERAGE_JSON >> results.md
+          echo "" >> results.md
+          echo "- Full HTML coverage report is available in workflow artifacts." >> results.md
 
       - name: Add PR Comment
         if: github.event.pull_request.head.repo.fork == false
