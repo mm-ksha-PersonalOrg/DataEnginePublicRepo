@@ -54,66 +54,16 @@ jobs:
           path: "**/*_test_results.trx"
           reporter: dotnet-trx
 
-      - name: Install ReportGenerator
-        run: dotnet tool install --global dotnet-reportgenerator-globaltool
-
-      - name: Generate Code Coverage Report
-        run: |
-          reportgenerator \
-            -reports:"source/**/TestResults/**/coverage.cobertura.xml" \
-            -targetdir:"coverlet/reports" \
-            -reporttypes:"Html;HtmlSummary;Cobertura;JsonSummary"
-
-      - name: Publish Code Coverage to Workflow Summary
+      - name: Generate and Publish Code Coverage Report
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.4.2
+        with:
+          reports: 'source/**/TestResults/**/coverage.cobertura.xml'
+          targetdir: 'coverlet/reports'
+          reporttypes: 'Html;HtmlSummary;Cobertura;MarkdownSummaryGithub'
+          
+      - name: Publish Code Coverage Summary
         if: success() || failure()
-        run: |
-          COVERAGE_JSON=coverlet/reports/Summary.json
-          
-          echo "# 📊 Code Coverage Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Extract coverage metrics
-          LINE=$(jq -r '.summary.linecoverage // "N/A"' $COVERAGE_JSON)
-          BRANCH=$(jq -r '.summary.branchcoverage // "N/A"' $COVERAGE_JSON)
-          COVERED_LINES=$(jq -r '.summary.coveredlines // 0' $COVERAGE_JSON)
-          COVERABLE_LINES=$(jq -r '.summary.coverablelines // 0' $COVERAGE_JSON)
-          COVERED_BRANCHES=$(jq -r '.summary.coveredbranches // 0' $COVERAGE_JSON)
-          TOTAL_BRANCHES=$(jq -r '.summary.totalbranches // 0' $COVERAGE_JSON)
-          
-          # Overall summary table
-          echo "## Overall Coverage" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Coverage | Details |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|----------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Line Coverage** | **$LINE%** | $COVERED_LINES / $COVERABLE_LINES lines |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Branch Coverage** | **$BRANCH%** | $COVERED_BRANCHES / $TOTAL_BRANCHES branches |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Assembly-level coverage
-          if jq -e '.assemblies' $COVERAGE_JSON > /dev/null 2>&1; then
-            echo "## Coverage by Assembly" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "| Assembly | Line Coverage | Branch Coverage |" >> $GITHUB_STEP_SUMMARY
-            echo "|----------|---------------|-----------------|" >> $GITHUB_STEP_SUMMARY
-            jq -r '.assemblies[]? | "| \(.name) | \(.linecoverage)% | \(.branchcoverage)% |"' $COVERAGE_JSON >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          # Low coverage files
-          echo "## ⚠️ Files Below 80% Line Coverage" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          LOW_COVERAGE=$(jq -r '[.assemblies[]?.classes[]? | select(.linecoverage != null and .linecoverage < 80)] | length' $COVERAGE_JSON)
-          
-          if [ "$LOW_COVERAGE" -gt 0 ]; then
-            echo "| Class | Line Coverage | Covered/Total Lines |" >> $GITHUB_STEP_SUMMARY
-            echo "|-------|---------------|---------------------|" >> $GITHUB_STEP_SUMMARY
-            jq -r '.assemblies[]?.classes[]? | select(.linecoverage != null and .linecoverage < 80) | "| \(.name) | \(.linecoverage)% | \(.coveredlines)/\(.coverablelines) |"' $COVERAGE_JSON >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ All files have at least 80% line coverage!" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📄 Full HTML coverage report is available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+        run: cat coverlet/reports/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
 
       - name: Upload TRX as Artifact (Fork PR fallback)
         if: github.event.pull_request.head.repo.fork == true
