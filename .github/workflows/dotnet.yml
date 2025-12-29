@@ -48,7 +48,7 @@ jobs:
         run: dotnet test ${{ env.TEST_PROJECT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger "trx;LogFileName=unit_test_results.trx" --collect:"XPlat Code Coverage" --settings source/coverlet.runsettings
 
       - name: Run Module Tests
-        run: dotnet test ${{ env.MODULE_TEST_PROJECT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger "trx;LogFileName=module_test_results.trx" --collect:"XPlat Code Coverage" --settings source/coverlet.runsettings
+        run: dotnet test ${{ env.MODULE_TEST_PROJECT }} --configuration Release --no-build --logger "trx;LogFileName=module_test_results.trx" --collect:"XPlat Code Coverage" --settings source/coverlet.runsettings
 
       - name: Publish Test Results
         uses: dorny/test-reporter@v2
@@ -70,63 +70,27 @@ jobs:
         if: success() || failure()
         run: cat coverlet/reports/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
 
-      - name: Enforce 80% Code Coverage Threshold
-        run: |
-          COVERAGE_JSON=coverlet/reports/Summary.json
-          LINE_COVERAGE=$(jq -r '.summary.linecoverage // 0' $COVERAGE_JSON)
-          
-          echo "Current Line Coverage: $LINE_COVERAGE%"
-          
-          if (( $(echo "$LINE_COVERAGE < 80" | bc -l) )); then
-            echo "❌ Code coverage is below 80% threshold!"
-            echo "Required: 80%, Current: $LINE_COVERAGE%"
-            exit 1
-          else
-            echo "✅ Code coverage meets the 80% threshold"
-          fi
-
-      - name: Create PR Comment with Test & Coverage Results
+      - name: Generate and Post PR Comment with Coverage
         if: github.event.pull_request.head.repo.fork == false
-        run: |
-          COVERAGE_JSON=coverlet/reports/Summary.json
-          LINE=$(jq -r '.summary.linecoverage // "N/A"' $COVERAGE_JSON)
-          BRANCH=$(jq -r '.summary.branchcoverage // "N/A"' $COVERAGE_JSON)
-          COVERED_LINES=$(jq -r '.summary.coveredlines // 0' $COVERAGE_JSON)
-          COVERABLE_LINES=$(jq -r '.summary.coverablelines // 0' $COVERAGE_JSON)
-          
-          echo "# 🧪 Test & Coverage Report" > results.md
-          echo "" >> results.md
-          
-          echo "## Test Results Summary" >> results.md
-          echo "" >> results.md
-          echo "| Metric | Count |" >> results.md
-          echo "|--------|-------|" >> results.md
-          echo "| ✅ Passed | ${{ steps.test-results.outputs.passed }} |" >> results.md
-          echo "| ❌ Failed | ${{ steps.test-results.outputs.failed }} |" >> results.md
-          echo "| ⏭️ Skipped | ${{ steps.test-results.outputs.skipped }} |" >> results.md
-          echo "" >> results.md
-          
-          echo "## 📊 Code Coverage Summary" >> results.md
-          echo "" >> results.md
-          echo "| Metric | Coverage | Details |" >> results.md
-          echo "|--------|----------|---------|" >> results.md
-          echo "| **Line Coverage** | **$LINE%** | $COVERED_LINES / $COVERABLE_LINES lines |" >> results.md
-          echo "| **Branch Coverage** | **$BRANCH%** | Combined Unit + Module Tests |" >> results.md
-          echo "" >> results.md
-          
-          if (( $(echo "$LINE < 80" | bc -l) )); then
-            echo "⚠️ **Warning:** Code coverage is below 80% threshold" >> results.md
-            echo "" >> results.md
-          fi
-          
-          echo "[📄 View Full Coverage Report in Workflow Artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> results.md
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: 'coverlet/reports/Cobertura.xml'
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: false
+          indicators: true
+          output: both
+          thresholds: '80 80'
 
-      - name: Add PR Comment
+      - name: Add Test Results to PR Comment
         if: github.event.pull_request.head.repo.fork == false
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           recreate: true
-          path: results.md
+          path: code-coverage-results.md
+          header: test-coverage-report
 
       - name: Upload TRX as Artifact (Fork PR fallback)
         if: github.event.pull_request.head.repo.fork == true
