@@ -85,18 +85,18 @@ jobs:
         if: github.event.pull_request.head.repo.fork == false
         run: |
           COVERAGE_JSON=coverlet/reports/Summary.json
-          LINE=$(jq '.line' $COVERAGE_JSON)
-          BRANCH=$(jq '.branch' $COVERAGE_JSON)
+          LINE=$(jq -r '.summary.linecoverage // "N/A"' $COVERAGE_JSON)
+          BRANCH=$(jq -r '.summary.branchcoverage // "N/A"' $COVERAGE_JSON)
           echo "## 📊 Code Coverage Summary" >> results.md
           echo "" >> results.md
           echo "- Line coverage: $LINE%" >> results.md
           echo "- Branch coverage: $BRANCH%" >> results.md
           echo "" >> results.md
           echo "### Files below 80% line coverage:" >> results.md
-          if jq -e '.Files' $COVERAGE_JSON > /dev/null 2>&1; then
-            jq -r '.Files[] | select(.line < 80) | "\(.Name): \(.line)%"' $COVERAGE_JSON >> results.md || echo "None" >> results.md
+          if jq -e '.assemblies' $COVERAGE_JSON > /dev/null 2>&1; then
+            jq -r '.assemblies[].classes[] | select(.linecoverage < 80) | "\(.name): \(.linecoverage)%"' $COVERAGE_JSON >> results.md || echo "None" >> results.md
           else
-            echo "No file coverage data available" >> results.md
+            echo "No detailed file coverage data available" >> results.md
           fi
           echo "" >> results.md
 
