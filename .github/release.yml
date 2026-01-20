@@ -1,14 +1,14 @@
 changelog:
   categories:
-    - title: "🚀 Features"
+    - title: "Features"
       labels:
         - "feature"
         - "feat"
-    - title: "🐞 Bug Fixes"
+    - title: "Bug Fixes"
       labels:
         - "bug"
         - "fix"
-    - title: "🧹 Maintenance"
+    - title: "Maintenance"
       labels:
         - "chore"
         - "refactor"
