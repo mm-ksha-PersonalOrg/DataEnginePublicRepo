@@ -1,0 +1,21 @@
+changelog:
+  categories:
+    - title: "🚀 Features"
+      labels:
+        - "feature"
+        - "feat"
+    - title: "🐞 Bug Fixes"
+      labels:
+        - "bug"
+        - "fix"
+    - title: "🧹 Maintenance"
+      labels:
+        - "chore"
+        - "refactor"
+        - "docs"
+
+  exclude:
+    labels:
+      - "no-release"
+    authors:
+      - "dependabot"
