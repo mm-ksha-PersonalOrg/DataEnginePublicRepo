@@ -4,3 +4,4 @@ public class HttpClientFactory(IHttpClientFactory httpClientFactory) : ICreateCl
 {
     public HttpClient CreateClient(string clientName) => httpClientFactory.CreateClient(clientName);
 }
+

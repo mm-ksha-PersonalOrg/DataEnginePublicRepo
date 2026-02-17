@@ -66,6 +66,7 @@ By default the API listens at `https://localhost:5059` unless overridden by envi
 3. From the top-right environment dropdown select an environment: `local` or `dev` (use `local` for local testing)
 4. Expand folders to find requests, select a request and click **Send**
 5. Inspect the request/response in the right panel
+6. Inspect the request/response in the right panel
 
 ---
 
@@ -154,6 +155,6 @@ By default, DataEngine requests the dev Template Repository, Submodel Registry, 
 
 - Run `dotnet dev-certs https --trust`
 - Ensure plugin and API endpoints match port and schema (`https://`)
-
+- Ensure plugin and API endpoints match port and schema (`https://`)
 
 ---
