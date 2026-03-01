@@ -31,7 +31,7 @@ public static class TestDataMapperProfiles
     public static SpecificAssetId CreateSpecificAssetId() => new("SpecificAssetIds", "Sample SpecificAssetIds");
 
     public static ValueList CreateValueList()
-        => new ([
+        => new([
             CreateValueReferencePair(),
             CreateValueReferencePair()
         ]);

@@ -97,7 +97,7 @@ public class AasRepositoryServiceTests
         var expectedRefs = CreateSubmodelRefs(3);
         _templateService.GetSubmodelRefByIdAsync(AasIdentifier, cancellationToken).Returns(expectedRefs);
 
-        var result = await _sut.GetSubmodelRefByIdAsync(AasIdentifier, null,null, cancellationToken);
+        var result = await _sut.GetSubmodelRefByIdAsync(AasIdentifier, null, null, cancellationToken);
 
         Assert.Equal(3, result.Result!.Count);
         await _templateService.Received(1).GetSubmodelRefByIdAsync(AasIdentifier, cancellationToken);
@@ -110,7 +110,7 @@ public class AasRepositoryServiceTests
         var expectedRefs = CreateSubmodelRefs(5);
         _templateService.GetSubmodelRefByIdAsync(AasIdentifier, cancellationToken).Returns(expectedRefs);
 
-        var result = await _sut.GetSubmodelRefByIdAsync(AasIdentifier, 2,null, cancellationToken);
+        var result = await _sut.GetSubmodelRefByIdAsync(AasIdentifier, 2, null, cancellationToken);
 
         Assert.Equal(2, result.Result!.Count);
     }

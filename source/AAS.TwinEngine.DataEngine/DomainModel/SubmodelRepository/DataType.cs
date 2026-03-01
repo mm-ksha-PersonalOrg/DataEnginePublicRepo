@@ -6,6 +6,5 @@ public enum DataType
     Number,
     Integer,
     Boolean,
-    Unknown,
-    StringArray
+    Unknown
 }

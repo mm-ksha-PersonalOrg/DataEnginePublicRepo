@@ -171,6 +171,7 @@ public partial class SubmodelTemplateService(
         {
             ISubmodelElementCollection collection => collection.Value,
             ISubmodelElementList list => list.Value,
+            IEntity entity => entity.Statements,
             _ => null
         };
     }

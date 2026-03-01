@@ -54,7 +54,7 @@ public class MultiPluginDataHandler(IOptions<Semantics> semantics, ILogger<Multi
         {
             var missingList = string.Join(", ", missingSemanticIds);
             logger.LogError("Semantic ID validation failed. The following required SemanticIds are not supported by any plugin manifest: {MissingSemanticIds}", missingList);
-            throw new ResourceNotFoundException();
+            throw new MultiPluginConflictException();
         }
     }
 

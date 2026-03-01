@@ -13,7 +13,7 @@ namespace AAS.TwinEngine.DataEngine;
 
 public class Program
 {
-    private const double ApiVersion = 1.0;
+    private static readonly Version ApiVersion = new(1, 0);
     private const string ApiTitle = "DataEngine API";
 
     public static async Task Main(string[] args)
@@ -34,13 +34,13 @@ public class Program
         _ = builder.Services.AddEndpointsApiExplorer();
         _ = builder.Services.AddOpenApiDocument(settings =>
         {
-            settings.DocumentName = ApiVersion.ToString("F1", CultureInfo.InvariantCulture);
+            settings.DocumentName = ApiVersion.ToString();
             settings.Title = ApiTitle;
         });
 
         _ = builder.Services.AddApiVersioning(options =>
         {
-            options.DefaultApiVersion = new ApiVersion(ApiVersion);
+            options.DefaultApiVersion = new ApiVersion(ApiVersion.Major, ApiVersion.Minor);
             options.AssumeDefaultVersionWhenUnspecified = true;
             options.ReportApiVersions = true;
             options.ApiVersionReader = new HeaderApiVersionReader("api-version");
@@ -70,7 +70,7 @@ public class Program
         _ = app.UseAuthorization();
         app.UseCorsServices();
         _ = app.UseOpenApi(c => c.PostProcess = (d, _) => d.Servers.Clear());
-        _ = app.UseSwaggerUI(c => c.SwaggerEndpoint($"/swagger/{ApiVersion:F1}/swagger.json", ApiTitle));
+        _ = app.UseSwaggerUI(c => c.SwaggerEndpoint($"/swagger/{ApiVersion}/swagger.json", ApiTitle));
         _ = app.MapControllers();
 
         await app.RunAsync().ConfigureAwait(false);

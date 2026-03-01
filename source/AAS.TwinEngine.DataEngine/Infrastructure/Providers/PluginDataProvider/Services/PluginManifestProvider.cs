@@ -24,7 +24,6 @@ public class PluginManifestProvider(ILogger<PluginManifestProvider> logger,
 
         foreach (var plugin in _plugins)
         {
-
             using var httpClient = CreateClient($"{PluginConfig.HttpClientNamePrefix}{plugin.PluginName}");
             try
             {

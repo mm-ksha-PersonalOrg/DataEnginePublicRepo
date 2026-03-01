@@ -29,7 +29,7 @@ public class SerializationServiceTests
             RootFolder = "aas"
         });
         var logger = Substitute.For<ILogger<SerializationService>>();
-        _sut = new SerializationService(_submodelRepositoryService, _shellService, _conceptDescriptionService ,options, logger);
+        _sut = new SerializationService(_submodelRepositoryService, _shellService, _conceptDescriptionService, options, logger);
     }
 
     [Fact]

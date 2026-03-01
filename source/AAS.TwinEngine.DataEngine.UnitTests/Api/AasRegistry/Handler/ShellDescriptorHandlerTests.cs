@@ -26,7 +26,7 @@ public class ShellDescriptorHandlerTests
     {
         var expectedShellDescriptors = TestDataMapperProfiles.CreateShellDescriptors();
         var request = new GetShellDescriptorsRequest(null, null);
-       _shellDescriptorService.GetAllShellDescriptorsAsync(null, null, Arg.Any<CancellationToken>()).Returns(expectedShellDescriptors);
+        _shellDescriptorService.GetAllShellDescriptorsAsync(null, null, Arg.Any<CancellationToken>()).Returns(expectedShellDescriptors);
 
         var result = await _sut.GetAllShellDescriptors(request, CancellationToken.None);
 
@@ -52,10 +52,10 @@ public class ShellDescriptorHandlerTests
     [Fact]
     public async Task GetAllShellDescriptors_ShellDescriptorsIsNull_ThrowsShellDescriptorNotFoundException()
     {
-        _shellDescriptorService.GetAllShellDescriptorsAsync(null, null,Arg.Any<CancellationToken>())!.Returns((ShellDescriptors)null!);
+        _shellDescriptorService.GetAllShellDescriptorsAsync(null, null, Arg.Any<CancellationToken>())!.Returns((ShellDescriptors)null!);
         var request = new GetShellDescriptorsRequest(null, null);
 
-        await Assert.ThrowsAsync<ShellDescriptorNotFoundException>(() => _sut.GetAllShellDescriptors(request ,CancellationToken.None));
+        await Assert.ThrowsAsync<ShellDescriptorNotFoundException>(() => _sut.GetAllShellDescriptors(request, CancellationToken.None));
     }
 
     [Fact]

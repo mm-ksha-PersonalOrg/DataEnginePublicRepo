@@ -44,7 +44,7 @@ public class PluginRequestBuilderTests
         // Arrange
         var schema1 = new JsonSchemaBuilder().Type(SchemaValueType.String).Build();
         var schema2 = new JsonSchemaBuilder().Type(SchemaValueType.Number).Build();
-        _pluginManifestHealthStatus.IsHealthy.Returns(true); 
+        _pluginManifestHealthStatus.IsHealthy.Returns(true);
 
         var jsonSchemas = new Dictionary<string, JsonSchema>
         {

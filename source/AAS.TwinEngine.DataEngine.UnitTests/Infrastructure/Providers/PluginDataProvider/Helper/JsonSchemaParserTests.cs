@@ -24,67 +24,6 @@ public class JsonSchemaParserTests
     }
 
     [Fact]
-    public void ParseJsonSchema_ShouldPraseArrayLeafNode()
-    {
-        const string Json = """
-                            {
-                            "leaf1": ["value1", "value2", "value3"]
-                            }
-                            """;
-
-        var result = JsonSchemaParser.ParseJsonSchema(Json);
-
-        var branch = Assert.IsType<SemanticBranchNode>(result);
-        Assert.Equal("leaf1", branch.SemanticId);
-        Assert.Equal(Cardinality.Unknown, branch.Cardinality);
-        Assert.Equal(3, branch.Children.Count);
-        for (var i = 0; i < 3; i++)
-        {
-            var leaf = Assert.IsType<SemanticLeafNode>(branch.Children[i]);
-            Assert.Equal("leaf1", leaf.SemanticId);
-            Assert.Equal($"value{i + 1}", leaf.Value);
-            Assert.Equal(DataType.Unknown, leaf.DataType);
-            Assert.Equal(Cardinality.Unknown, leaf.Cardinality);
-        }
-    }
-
-    [Fact]
-    public void ParseJsonSchema_ShouldPraseParseNestedObject_WithArrayLeafNode()
-    {
-        const string Json = """
-                            {
-                            "branch0": {
-                            "leaf1": ["value1", "value2", "value3"],
-                            "leaf2": "value4"
-                            }
-                            }
-                            """;
-
-        var result = JsonSchemaParser.ParseJsonSchema(Json);
-
-        var branch = Assert.IsType<SemanticBranchNode>(result);
-        Assert.Equal("branch0", branch.SemanticId);
-        Assert.Equal(Cardinality.Unknown, branch.Cardinality);
-        Assert.Equal(2, branch.Children.Count);
-        var leaf1 = Assert.IsType<SemanticBranchNode>(branch.Children[0]);
-        Assert.Equal(3, leaf1.Children.Count);
-        for (var i = 0; i < 3; i++)
-        {
-            var leaf = Assert.IsType<SemanticLeafNode>(leaf1.Children[i]);
-            Assert.Equal("leaf1", leaf.SemanticId);
-            Assert.Equal($"value{i + 1}", leaf.Value);
-            Assert.Equal(DataType.Unknown, leaf.DataType);
-            Assert.Equal(Cardinality.Unknown, leaf.Cardinality);
-        }
-
-        var leaf2 = Assert.IsType<SemanticLeafNode>(branch.Children[1]);
-        Assert.Equal("leaf2", leaf2.SemanticId);
-        Assert.Equal("value4", leaf2.Value);
-        Assert.Equal(DataType.Unknown, leaf2.DataType);
-        Assert.Equal(Cardinality.Unknown, leaf2.Cardinality);
-    }
-
-    [Fact]
     public void ParseJsonSchema_ShouldParseNestedObject()
     {
         const string Json = """

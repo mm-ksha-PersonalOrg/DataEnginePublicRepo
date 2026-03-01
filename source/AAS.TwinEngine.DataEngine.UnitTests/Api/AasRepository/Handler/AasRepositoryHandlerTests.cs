@@ -102,7 +102,7 @@ public class AasRepositoryHandlerTests
         var request = new GetSubmodelRefRequest(encodedId, 5, null);
         var expectedDto = new SubmodelRefDto
         {
-            PagingMetaData = new PagingMetaDataDto(){ Cursor = "" },
+            PagingMetaData = new PagingMetaDataDto() { Cursor = "" },
             Result =
             [
                 new Reference
